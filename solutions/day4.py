@@ -1,8 +1,6 @@
-from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
-from numpy.lib.twodim_base import diag
 
 class Board:
   def __init__(self, nums, marked=None):
