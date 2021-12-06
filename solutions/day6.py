@@ -29,7 +29,7 @@ def part_2():
   n = 0
   for offset, po in Counter(offsets).items():
     print(offset, po)
-    n += _simulate_fish(256, po, offset)
+    n += _simulate_fish(80, po, offset)
   print(f"PART 2: After 256 days there are {n} lanternfish")
 
 
