@@ -1,52 +1,38 @@
 from collections import Counter
+import functools
 import math
 from pathlib import Path
 
 
-class Lanternfish:
-  def __init__(self, state=8):
-    self._state = state
-
-  def update(self):
-    if self._state == 0:
-      self._state = 6
-      return True
-    else:
-      self._state -= 1
-      return False
-
-
 def part_1():
   """Simple part 1"""
-  fish_list = [Lanternfish(i) for i in _init_fish()]
-  fish_list = _simulate_days(fish_list, days=80)
-  print(f"PART 1: After 80 days there are {len(fish_list)} lanternfish")
+  n = _solve_challenge(days=80)
+  print(f"PART 1: After 80 days there are {n} lanternfish")
 
 
 def part_2():
   """Complex part 2"""
-  offsets = _init_fish()
-  n = 0
-  for offset, po in Counter(offsets).items():
-    print(offset, po)
-    n += _simulate_fish(80, po, offset)
+  n = _solve_challenge(days=256)
   print(f"PART 2: After 256 days there are {n} lanternfish")
 
 
-def _simulate_fish(t, po, offset=8):
-  if t < offset:
-    return 0
-  n_children = po * math.floor((t - offset) / 6 + 1)
-  n_more = sum(_simulate_fish(t, po, offset=offset + 8 * i) for i in range(1, n_children + 1))
-  return n_children + n_more
-  
+def _solve_challenge(days):
+  states = _init_fish()
+  n = len(states)
+  for state, po in Counter(states).items():
+    n += po * _simulate_fish(days - state - 1)
+  return n
 
-def _simulate_days(fish_list, days):
-  for _ in range(days):
-    for fish in list(fish_list):
-      if fish.update():
-        fish_list.append(Lanternfish())
-  return fish_list
+
+@functools.cache
+def _simulate_fish(t):
+  n_children = math.floor(t / 7 + 1)
+  for _ in range(1, n_children + 1):
+    if t - 9 < 0:
+      break
+    n_children += _simulate_fish(t - 9)
+    t -= 7
+  return n_children
         
  
 def _init_fish():
