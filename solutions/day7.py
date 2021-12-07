@@ -31,16 +31,14 @@ def part_2_optimize():
 
   def calc_fuel(middle):
     fuel = 0
-    for pos in (positions - middle):
+    for pos in (positions - math.floor(middle)):
       fuel += np.arange(abs(pos) + 1).sum()
-    return fuel
+    return int(fuel)
 
   positions = _get_positions()
   solution = scipy.optimize.golden(calc_fuel, brack=(positions.min(), positions.max()))
-  best_middles = math.floor(solution), math.ceil(solution)
-  best_fuels = calc_fuel(best_middles[0]), calc_fuel(best_middles[1])
-  idx = 0 if best_fuels[0] < best_fuels[1] else 1
-  print(f"PART 2: Middle position is {best_middles[idx]} and total fuel is {best_fuels[idx]}")
+  middle = math.floor(solution)
+  print(f"PART 2: Middle position is {middle} and total fuel is {calc_fuel(middle)}")
 
  
 def _get_positions():
@@ -51,5 +49,5 @@ def _get_positions():
 
 if __name__ == "__main__":
   part_1()
-  part_2_brute()
+  #part_2_brute()
   part_2_optimize()
