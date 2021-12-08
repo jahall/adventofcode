@@ -30,8 +30,8 @@ def part_2():
   """Complex part 2"""
   count = 0
   for inp, out in _iter_rows():
-    inp = sorted(inp, key=lambda x: len(x))
     # 1. Find 1, 4, 7 and 8
+    inp = sorted(inp, key=lambda x: len(x))
     encoder = {1: inp[0], 4: inp[2], 7: inp[1], 8: inp[9]}
     # 2. Pry apart 2, 3 and 5
     bd = encoder[4] - encoder[1]
