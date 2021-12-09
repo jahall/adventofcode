@@ -19,17 +19,17 @@ def part_2():
 
 
 def _size_of_basin(grid, low_point):
-  points = {low_point}
+  basin = {low_point}
   while True:
     finished = True
-    for point in list(points):
-      for p, n in _iter_neighbours(grid, point):
-        if p not in points and n < 9:
+    for point in list(basin):
+      for neighbour, height in _iter_neighbours(grid, point):
+        if neighbour not in basin and height < 9:
           finished = False
-          points.add(p)
+          basin.add(neighbour)
     if finished:
       break
-  return len(points)
+  return len(basin)
 
 
 def _iter_low_points(grid):
@@ -47,6 +47,7 @@ def _iter_neighbours(grid, point):
 
 
 def _load_grid():
+  # include padding rows/columns to make things easier down the line
   input_file = Path(__file__).parent.parent / "data" / "day9.txt"
   with input_file.open() as f:
     grid = []
