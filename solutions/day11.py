@@ -20,7 +20,7 @@ def part_2():
   while True:
     step += 1
     grid = _simulate_one_step(grid)
-    if grid.sum() == 0:
+    if (grid == 0).all():
       break
   print(f"PART 2: All the octupi flash at step {step}")
 
