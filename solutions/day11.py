@@ -15,7 +15,14 @@ def part_1():
 
 def part_2():
   """Complex part 2"""
-  pass
+  grid = _get_grid()
+  step = 0
+  while True:
+    step += 1
+    grid = _simulate_one_step(grid)
+    if grid.sum() == 0:
+      break
+  print(f"PART 2: All the octupi flash at step {step}")
 
 
 def _simulate_one_step(grid):
