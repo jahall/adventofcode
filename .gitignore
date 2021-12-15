@@ -1,5 +1,6 @@
 # Advent of code specific data
 data/
+models/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

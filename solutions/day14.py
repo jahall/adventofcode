@@ -68,7 +68,7 @@ def part_2():
   for _ in range(40):
     polymer.step()
   score = polymer.score()
-  print(f"PART 1: After 40 steps the score is: {score}")
+  print(f"PART 2: After 40 steps the score is: {score}")
 
 
 def _load_problem():
