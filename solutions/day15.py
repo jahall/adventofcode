@@ -72,7 +72,7 @@ class AsyncValueIterationSolver:
   def __init__(
     self,
     risks,
-    discount=0.99999,
+    discount=0.999999,
     max_iter=1000,
   ):
     self.risks = risks
@@ -134,7 +134,7 @@ class AsyncValueIterationSolver:
         break
       if not iteration % 10:
         self.save()
-
+  
     print("\nActions in top 20x20:\n")
     for row in self.policy[:20,:20]:
       print("".join(2 * a + " " for a in row))
@@ -146,25 +146,7 @@ class AsyncValueIterationSolver:
     print()
 
     self.save()
-    return self.score()
-
-  def score(self):
-    score = 0
-    rc = 0, 0
-    nrows, ncols = self.risks.shape
-    visited = {rc}
-    while True:
-      neighbours = []
-      for rc_n, _ in self._iter_actions(rc, "*<>v^"):
-        neighbours.append((self.value[rc_n], rc_n))
-      rc = max(neighbours)[1]
-      score += self.risks[rc]
-      if rc == (self.risks.shape[0] - 1, self.risks.shape[1] - 1):
-        break
-      if rc in visited:
-        raise RuntimeError(f"Oops, already visited {rc}")
-      visited.add(rc)
-    return score
+    return int(np.ceil(-self.value[0,0]))
 
   def save(self):
     np.savez(
@@ -212,7 +194,7 @@ def part_2_djikstra():
 
 def part_2_value_iteration():
   """Complex part 2"""
-  solver = AsyncValueIterationSolver(_load_big_risks())
+  solver = AsyncValueIterationSolver(_load_risks())
   total_risk = solver.solve()
   print(f"PART 2: The optimal total risk is: {total_risk}")
 
