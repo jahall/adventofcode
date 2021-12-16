@@ -26,43 +26,18 @@ class Packet:
       type_id=cls._to_int(message[i + 3:i + 6]),
     )
     i += 6
-    # Literal
     if packet.type_id == 4:
-      num_repr = ""
-      while True:
-        prefix = message[i]
-        num_repr += message[i + 1:i + 5]
-        i += 5
-        if prefix == "0":
-          break
-      packet.data = cls._to_int(num_repr)
-      if verbose:
-        print(f"{'-' * level} {packet}")
-    # Operator
+      i = cls._parse_literal(packet, message, i, level, verbose)
     else:
-      if verbose:
-        print(f"{'-' * level} {packet}")
-      length_type_id = message[i]
-      i += 1
-      offset = 15 if length_type_id == "0" else 11
-      length = cls._to_int(message[i:i + offset])
-      i += offset
-      start, sub_packets, count = i, [], 0
-      while True:
-        count += 1
-        sub_packet, i = Packet.from_message(
-          message,
-          index=i,
-          level=level + 1,
-          return_index=True,
-        )
-        sub_packets.append(sub_packet)
-        if length_type_id == "0" and (i - start) >= length:
-          break
-        elif length_type_id == "1" and count == length:
-          break
-      packet.data = sub_packets
+      i = cls._parse_operator(packet, message, i, level, verbose)
     return (packet, i) if return_index else packet
+
+  def version_sum(self):
+    """Get nested sum of all versions."""
+    version_sum = self.version
+    if isinstance(self.data, list):
+      version_sum += sum(sp.version_sum() for sp in self.data)
+    return version_sum
 
   def eval(self):
     """Evaluate the expression."""
@@ -80,6 +55,46 @@ class Packet:
     sub_values = [sp.eval() for sp in self.data]
     return operators[self.type_id](sub_values)
 
+  @classmethod
+  def _parse_literal(cls, packet, message, i, level, verbose):
+      num_repr = ""
+      while True:
+        prefix = message[i]
+        num_repr += message[i + 1:i + 5]
+        i += 5
+        if prefix == "0":
+          break
+      packet.data = cls._to_int(num_repr)
+      if verbose:
+        print(f"{'-' * level} {packet}")
+      return i
+
+  @classmethod
+  def _parse_operator(cls, packet, message, i, level, verbose):
+    if verbose:
+      print(f"{'-' * level} {packet}")
+    length_type_id = message[i]
+    i += 1
+    offset = 15 if length_type_id == "0" else 11
+    length = cls._to_int(message[i:i + offset])
+    i += offset
+    start, sub_packets, count = i, [], 0
+    while True:
+      count += 1
+      sub_packet, i = Packet.from_message(
+        message,
+        index=i,
+        level=level + 1,
+        return_index=True,
+      )
+      sub_packets.append(sub_packet)
+      if length_type_id == "0" and (i - start) >= length:
+        break
+      elif length_type_id == "1" and count == length:
+        break
+    packet.data = sub_packets
+    return i
+
   @staticmethod
   def _to_int(binary_str):
     # surely a better way than this :)
@@ -87,13 +102,6 @@ class Packet:
     for p, val in enumerate(reversed(binary_str)):
       num += int(val) * 2 ** p
     return num
-
-  def version_sum(self):
-    """Get nested sum of all versions."""
-    version_sum = self.version
-    if isinstance(self.data, list):
-      version_sum += sum(sp.version_sum() for sp in self.data)
-    return version_sum
 
 
 def part_1():
