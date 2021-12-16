@@ -1,10 +1,13 @@
+import itertools
 import functools
 from pathlib import Path
 from queue import PriorityQueue
 import random
+import sys
 
 import numpy as np
 
+sys.setrecursionlimit(10000)
 
 class RecursiveSolver:
   """Solve recursively...but constrained to moving right or down."""
@@ -61,108 +64,106 @@ class DjikstraSolver:
 
 
 class AsyncValueIterationSolver:
-  """Solve using asynchronous value iteration...massive overkill."""
+  """Solve using value iteration...massive overkill.
+  
+  Also, useful learning: setting the right discount is important! Needs
+  to be high enough to bump it out of short-term thinking!
+  """
   def __init__(
     self,
     risks,
-    max_iter=100,
-    discount=0.99,
-    final_reward=100_000,
-    iterate=True,
-    shuffle=False,
+    discount=0.99999,
+    max_iter=1000,
   ):
     self.risks = risks
-    self.max_iter = max_iter
     self.discount = discount
-    self.shuffle = shuffle
-    self.path = f"models/async-value-iteration-{risks.shape[0]}.npz"
+    self.max_iter = max_iter
+    self.path = f"models/value-iteration-{risks.shape[0]}.npz"
     try:
       self.load()
     except FileNotFoundError:
-      self.value = np.zeros(self.risks.shape)
-      self.policy = np.empty(self.risks.shape, dtype=object)
-      self.policy[:] = "*"
       self.rewards = -risks.copy()
-    self.rewards[-1, -1] = final_reward  # final state should have big reward
-
-  def solve(self):
-    nrows, ncols = self.risks.shape
-    iteration, n_stable = 0, 0
-    row_range, col_range = list(range(nrows)), list(range(ncols))
-    if self.shuffle:
-      random.shuffle(row_range)
-      random.shuffle(col_range)
-    while True:
-      # 1. Perform value update
-      if not self.max_iter:
-        break
-      iteration += 1
-      n_changed, n_changed_first_100, n_changed_first_10000 = 0, 0, 0
-      for r in row_range:
-        for c in col_range:
-          if r == nrows - 1 and c == ncols - 1:
-            # if in final state...just stay there
-            continue
-          possibilities = []
-          for action in ["*", "<", ">", "^", "v"]:
-            ro, co = self._transitions[action](r, c)
-            if 0 <= ro < nrows and 0 <= co < ncols:
-              value = self.rewards[ro, co] + self.discount * self.value[ro, co]
-              possibilities.append((value, action))
-          best_value, best_action = max(possibilities)
-          if best_action != self.policy[r, c]:
-            n_changed += 1
-            if r < 10 and c < 10:
-              n_changed_first_100 += 1
-            if r < 100 and c < 100:
-              n_changed_first_10000 += 1
-          self.value[r, c] = best_value
-          self.policy[r, c] = best_action
-      # 2. Check for termination
-      print(
-        f"Iteration {iteration}: Changed {n_changed} actions "
-        f"({n_changed_first_100} in top 10x10) "
-        f"({n_changed_first_10000} in top 100x100) ")
-      n_stable = (n_stable + 1) if n_changed == 0 else 0
-      if n_stable == 3 or iteration == self.max_iter:
-        print("Saving...")
-        self.save()
-        break
-      if not iteration % 10:
-        print("Saving...")
-        self.save()
-
-    print("First 10x10:")
-    print(self.policy[:10,:10])
-    print(self.rewards[:10,:10])
-
-    print("Last 10x10:")
-    print(self.policy[-10:,-10:])
-    print(self.rewards[-10:,-10:])
-
-    return self.score()
+      self.value = np.zeros(self.risks.shape)
+      for rc in self._iter_elements():
+        self.value[rc] = self._init_value(rc)
+      self.policy = np.empty(self.value.shape, dtype=object)
+      self.policy[:] = "*"
 
   _transitions = {
-    "*": lambda r, c: (r, c),  # stay
-    "<": lambda r, c: (r, c - 1),  # left
-    "^": lambda r, c: (r - 1, c),  # up
-    ">": lambda r, c: (r, c + 1),  # right
-    "v": lambda r, c: (r + 1, c),  # down
+    "*": lambda rc: rc,
+    "<": lambda rc: (rc[0], rc[1] - 1),
+    ">": lambda rc: (rc[0], rc[1] + 1),
+    "^": lambda rc: (rc[0] - 1, rc[1]),
+    "v": lambda rc: (rc[0] + 1, rc[1]),
   }
+
+  @functools.cache
+  def _init_value(self, rc):
+    neighbour_values = []
+    # constrain to move either right or down...
+    for rc_n, _ in self._iter_actions(rc, ">v"):
+      neighbour_value = self.rewards[rc_n] + self.discount * self._init_value(rc_n)
+      neighbour_values.append(neighbour_value)
+    return max(neighbour_values or [0])
+
+  def solve(self):
+    iteration = 0
+    n_stable = 0
+    while True:
+      # 1. Perform value update
+      iteration += 1
+      n_changed = 0
+      for rc in self._iter_elements(shuffle=True):
+        is_final = rc == (self.risks.shape[0] - 1, self.risks.shape[1] - 1)
+        neighbour_values = []
+        actions = "<>v^" + ("*" if is_final else "")
+        for rc_n, action in self._iter_actions(rc, actions):
+          reward = self.rewards[rc_n]
+          if action == "*" and is_final:
+            reward = 0
+          neighbour_value = reward + self.discount * self.value[rc_n]
+          neighbour_values.append((neighbour_value, action))
+        self.value[rc], best_action = max(neighbour_values)
+        if best_action != self.policy[rc]:
+          n_changed += 1
+        self.policy[rc] = best_action
+      # 2. Check for termination
+      print(f"Iteration {iteration}: {n_changed} altered actions")
+      n_stable = (n_stable + 1) if n_changed == 0 else 0
+      if iteration == self.max_iter or n_stable == 10:
+        break
+      if not iteration % 10:
+        self.save()
+
+    print("\nActions in top 20x20:\n")
+    for row in self.policy[:20,:20]:
+      print("".join(2 * a + " " for a in row))
+    print()
+    
+    print("Actions in bottom 20x20:\n")
+    for row in self.policy[-20:,-20:]:
+      print("".join(2 * a + " " for a in row))
+    print()
+
+    self.save()
+    return self.score()
 
   def score(self):
     score = 0
-    r, c = 0, 0
+    rc = 0, 0
     nrows, ncols = self.risks.shape
-    visited = {(r, c)}
+    visited = {rc}
     while True:
-      r, c = self._transitions[self.policy[r, c]](r, c)
-      score += self.risks[r, c]
-      if r == nrows - 1 and c == ncols - 1:
+      neighbours = []
+      for rc_n, _ in self._iter_actions(rc, "*<>v^"):
+        neighbours.append((self.value[rc_n], rc_n))
+      rc = max(neighbours)[1]
+      score += self.risks[rc]
+      if rc == (self.risks.shape[0] - 1, self.risks.shape[1] - 1):
         break
-      if (r, c) in visited:
-        raise RuntimeError(f"Oops, already visited ({r}, {c})")
-      visited.add((r, c))
+      if rc in visited:
+        raise RuntimeError(f"Oops, already visited {rc}")
+      visited.add(rc)
     return score
 
   def save(self):
@@ -181,6 +182,19 @@ class AsyncValueIterationSolver:
     self.policy = f["policy"]
     self.rewards = f["rewards"]
 
+  def _iter_actions(self, rc, actions):
+    for action in actions:
+      rn, cn = self._transitions[action](rc)
+      if 0 <= rn < self.risks.shape[0] and 0 <= cn < self.risks.shape[1]:
+        yield (rn, cn), action
+
+  def _iter_elements(self, shuffle=False):
+    rows = range(self.rewards.shape[0])
+    cols = range(self.rewards.shape[1])
+    rcs = list(itertools.product(rows, cols))
+    random.shuffle(rcs)
+    return rcs
+
 
 def part_1():
   """Simple part 1"""
@@ -198,7 +212,7 @@ def part_2_djikstra():
 
 def part_2_value_iteration():
   """Complex part 2"""
-  solver = AsyncValueIterationSolver(_load_big_risks(), max_iter=1000)
+  solver = AsyncValueIterationSolver(_load_big_risks())
   total_risk = solver.solve()
   print(f"PART 2: The optimal total risk is: {total_risk}")
 
