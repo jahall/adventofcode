@@ -69,7 +69,7 @@ class AsyncValueIterationSolver:
   Also, useful learning: setting the right discount is important! Needs
   to be high enough to bump it out of short-term thinking!
 
-  Solutions converges within 500-1000 iterations for the big problem,
+  Solutions converges in about 500-750 iterations for the big problem,
   but takes aaaaaages :)
   """
   def __init__(
@@ -78,19 +78,19 @@ class AsyncValueIterationSolver:
     discount=0.9999999,  # setting to 0.999999 gets within 1 of the actual total risk
     max_iter=10000,
   ):
-    self.risks = risks
     self.discount = discount
     self.max_iter = max_iter
     self.path = f"models/value-iteration-{risks.shape[0]}.npz"
     try:
       self.load()
     except FileNotFoundError:
-      self.rewards = -risks.copy()
-      self.value = np.zeros(self.risks.shape)
+      self.rewards = -risks
+      self.value = np.zeros(risks.shape)
       for rc in self._iter_elements():
         self.value[rc] = self._init_value(rc)
       self.policy = np.empty(self.value.shape, dtype=object)
       self.policy[:] = "*"
+    self.final = risks.shape[0] - 1, risks.shape[1] - 1
 
   _transitions = {
     "*": lambda rc: rc,
@@ -105,7 +105,7 @@ class AsyncValueIterationSolver:
     neighbour_values = []
     # constrain to move either right or down...
     for rc_n, _ in self._iter_actions(rc, ">v"):
-      neighbour_value = self.rewards[rc_n] + self.discount * self._init_value(rc_n)
+      neighbour_value = self._reward(rc, rc_n) + self.discount * self._init_value(rc_n)
       neighbour_values.append(neighbour_value)
     return max(neighbour_values or [0])
 
@@ -117,14 +117,10 @@ class AsyncValueIterationSolver:
       iteration += 1
       n_changed = 0
       for rc in self._iter_elements(shuffle=True):
-        is_final = rc == (self.risks.shape[0] - 1, self.risks.shape[1] - 1)
         neighbour_values = []
-        actions = "<>v^" + ("*" if is_final else "")
+        actions = "<>v^" + ("*" if rc == self.final else "")
         for rc_n, action in self._iter_actions(rc, actions):
-          reward = self.rewards[rc_n]
-          if action == "*" and is_final:
-            reward = 0
-          neighbour_value = reward + self.discount * self.value[rc_n]
+          neighbour_value = self._reward(rc, rc_n) + self.discount * self.value[rc_n]
           neighbour_values.append((neighbour_value, action))
         self.value[rc], best_action = max(neighbour_values)
         if best_action != self.policy[rc]:
@@ -154,7 +150,6 @@ class AsyncValueIterationSolver:
   def save(self):
     np.savez(
       self.path,
-      risks=self.risks,
       value=self.value,
       policy=self.policy,
       rewards=self.rewards,
@@ -162,15 +157,20 @@ class AsyncValueIterationSolver:
 
   def load(self):
     f = np.load(self.path, allow_pickle=True)
-    self.risks = f["risks"]
     self.value = f["value"]
     self.policy = f["policy"]
     self.rewards = f["rewards"]
 
+  def _reward(self, rc, rc_n):
+    reward = self.rewards[rc_n]
+    if rc == rc_n and rc == self.final:
+      reward = 0
+    return reward
+
   def _iter_actions(self, rc, actions):
     for action in actions:
       rn, cn = self._transitions[action](rc)
-      if 0 <= rn < self.risks.shape[0] and 0 <= cn < self.risks.shape[1]:
+      if 0 <= rn < self.rewards.shape[0] and 0 <= cn < self.rewards.shape[1]:
         yield (rn, cn), action
 
   def _iter_elements(self, shuffle=False):
