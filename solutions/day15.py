@@ -68,12 +68,15 @@ class AsyncValueIterationSolver:
   
   Also, useful learning: setting the right discount is important! Needs
   to be high enough to bump it out of short-term thinking!
+
+  Solutions converges within 500-1000 iterations for the big problem,
+  but takes aaaaaages :)
   """
   def __init__(
     self,
     risks,
-    discount=0.999999,
-    max_iter=1000,
+    discount=0.9999999,  # setting to 0.999999 gets within 1 of the actual total risk
+    max_iter=10000,
   ):
     self.risks = risks
     self.discount = discount
@@ -194,7 +197,7 @@ def part_2_djikstra():
 
 def part_2_value_iteration():
   """Complex part 2"""
-  solver = AsyncValueIterationSolver(_load_risks())
+  solver = AsyncValueIterationSolver(_load_big_risks())
   total_risk = solver.solve()
   print(f"PART 2: The optimal total risk is: {total_risk}")
 
