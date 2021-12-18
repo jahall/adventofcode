@@ -58,7 +58,7 @@ class Pair:
         break
     return self
     
-  def _reduce_once(self, level=0):
+  def _reduce_once(self, level=1):
     """Perform one reduction step."""
     # 1. Handle splits
     if self.is_number:
@@ -66,30 +66,24 @@ class Pair:
         self.split()
         return True, None, None
       return False, None, None
-    # 2. Handle left explosion
-    if level == 3 and not self.left.is_number:
-      l, r = self.left.explode()
-      self.right.add(r, side="left")
-      return True, "left", l
+    # 2. Handle explosion
+    if level == 5:
+      l, r = self.explode()
+      return True, l, r
     # 3. Handle left recursion
-    altered, side, value = self.left._reduce_once(level=level + 1)
+    altered, lval, rval = self.left._reduce_once(level=level + 1)
     if altered:
-      if side == "right":
-        self.right.add(value, side="left")
-        side, value = None, None
-      return True, side, value
-    # 4. Handle right explosion
-    if level == 3 and not self.right.is_number:
-      l, r = self.right.explode()
-      self.left.add(l, side="right")
-      return True, "right", r
-    # 5. Handle right recursion
-    altered, side, value = self.right._reduce_once(level=level + 1)
+      if rval is not None:
+        self.right.add(rval, side="left")
+        rval = None
+      return True, lval, rval
+    # 4. Handle right recursion
+    altered, lval, rval = self.right._reduce_once(level=level + 1)
     if altered:
-      if side == "left":
-        self.left.add(value, side="right")
-        side, value = None, None
-      return True, side, value
+      if lval is not None:
+        self.left.add(lval, side="right")
+        lval = None
+      return True, lval, rval
     return False, None, None
 
   def explode(self):
@@ -111,14 +105,14 @@ class Pair:
   def __repr__(self):
     return self._repr()
 
-  def _repr(self, level=0):
+  def _repr(self, level=1):
     if self.is_number:
       if self.magnitude >= 10:
         return f"\u001b[31m{self.left}\u001b[0m"
       return f"{self.left}"
     left_str = self.left._repr(level + 1)
     right_str = self.right._repr(level + 1)
-    if level > 3:
+    if level > 4:
       return f"\u001b[32m({left_str}\u001b[0m,\u001b[32m{right_str}\u001b[32m)\u001b[0m"
     return f"[{left_str},{right_str}]"
 
