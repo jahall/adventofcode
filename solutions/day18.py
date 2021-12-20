@@ -1,3 +1,5 @@
+import copy
+import itertools
 import json
 import math
 from pathlib import Path
@@ -33,6 +35,10 @@ class Pair:
       right=Pair.from_list(right),
     )
 
+  def copy(self):
+    """Important for part 2!!"""
+    return copy.deepcopy(self)
+
   def __add__(self, other):
     pair = Pair(self, other)
     pair.reduce()
@@ -50,35 +56,49 @@ class Pair:
 
   def reduce(self, verbose=False):
     """Perform reduction."""
+    if verbose:
+      print(self)
     while True:
-      if verbose:
+      altered_explode = self._reduce("explode")
+      if verbose and altered_explode:
         print(self)
-      altered, _, _ = self._reduce_once()
+      altered_split, _, _ = self._reduce_once("split")
+      if verbose and altered_split:
+        print(self)
+      if not altered_explode and not altered_split:
+        return self
+
+  def _reduce(self, type):
+    any_altered = False
+    while True:
+      altered, _, _ = self._reduce_once(type)
+      any_altered = any_altered or altered
       if not altered:
-        break
-    return self
+        return any_altered
     
-  def _reduce_once(self, level=1):
+  def _reduce_once(self, type, level=1):
     """Perform one reduction step."""
     # 1. Handle splits
     if self.is_number:
-      if self.magnitude >= 10:
+      if type == "split" and self.magnitude >= 10:
         self.split()
         return True, None, None
       return False, None, None
     # 2. Handle explosion
-    if level == 5:
-      l, r = self.explode()
-      return True, l, r
+    if level > 4:
+      if type == "explode":
+        l, r = self.explode()
+        return True, l, r
+      return False, None, None
     # 3. Handle left recursion
-    altered, lval, rval = self.left._reduce_once(level=level + 1)
+    altered, lval, rval = self.left._reduce_once(type, level=level + 1)
     if altered:
       if rval is not None:
         self.right.add(rval, side="left")
         rval = None
       return True, lval, rval
     # 4. Handle right recursion
-    altered, lval, rval = self.right._reduce_once(level=level + 1)
+    altered, lval, rval = self.right._reduce_once(type, level=level + 1)
     if altered:
       if lval is not None:
         self.left.add(lval, side="right")
@@ -121,79 +141,38 @@ def tests():
   """Some tests."""
   # 1. Single explodes
   p = Pair.from_list([[[[[9,8],1],2],3],4])
-  p._reduce_once()
+  p._reduce_once("explode")
   assert p == Pair.from_list([[[[0,9],2],3],4])
 
   p = Pair.from_list([7,[6,[5,[4,[3,2]]]]])
-  p._reduce_once()
+  p._reduce_once("explode")
   assert p == Pair.from_list([7,[6,[5,[7,0]]]])
 
   p = Pair.from_list([[6,[5,[4,[3,2]]]],1])
-  p._reduce_once()
+  p._reduce_once("explode")
   assert p == Pair.from_list([[6,[5,[7,0]]],3])
 
   p = Pair.from_list([[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]])
-  p._reduce_once()
+  p._reduce_once("explode")
   assert p == Pair.from_list([[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]])
 
   p = Pair.from_list([[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]])
-  p._reduce_once()
+  p._reduce_once("explode")
   assert p == Pair.from_list([[3,[2,[8,0]]],[9,[5,[7,0]]]])
 
-  # 2. Full reduction
-  p1 = Pair.from_list([[[[4,3],4],4],[7,[[8,4],9]]])
-  p2 = Pair.from_list([1,1])
-  expected = Pair.from_list([[[[0,7],4],[[7,8],[6,0]]],[8,1]])
-  assert (p1 + p2) == expected
-
-  # 3. Full sums
+  # 2. Full sums
   p = Pair(1, 1) + Pair(2, 2) + Pair(3, 3) + Pair(4, 4)
   assert p == Pair.from_list([[[[1,1],[2,2]],[3,3]],[4,4]])
 
   p = Pair(1, 1) + Pair(2, 2) + Pair(3, 3) + Pair(4, 4) + Pair(5, 5) + Pair(6, 6)
   assert p == Pair.from_list([[[[5,0],[7,4]],[5,5]],[6,6]])
 
-  def compare(p1, p2, ex):
-    p1 = Pair.from_list(p1)
-    p2 = Pair.from_list(p2)
-    ex = Pair.from_list(ex)
-    p = Pair(p1, p2).reduce(verbose=True)
-    print()
-    print(p)
-    print(ex)
-    assert p == ex
+  p1 = Pair.from_list([[[[4,3],4],4],[7,[[8,4],9]]])
+  p2 = Pair.from_list([1,1])
+  ex = Pair.from_list([[[[0,7],4],[[7,8],[6,0]]],[8,1]])
+  assert p1 + p2 == ex
 
-  #compare(
-  #  [[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]],
-  #  [7,[[[3,7],[4,3]],[[6,3],[8,8]]]],
-  #  [[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]],
-  #)
-
-  compare(
-    [[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]],
-    [[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]],
-    [[[[6,7],[6,7]],[[7,7],[0,7]]],[[[8,7],[7,7]],[[8,8],[8,0]]]]
-  )
-
-  compare(
-    [[[[6,6],[6,6]],[[6,0],[6,7]]],[[[7,7],[8,9]],[8,[8,1]]]],
-    [2,9],
-    [[[[6,6],[7,7]],[[0,7],[7,7]]],[[[5,5],[5,6]],9]],
-  )
-
-  compare(
-    [[[[7,7],[7,7]],[[8,7],[8,7]]],[[[7,0],[7,7]],9]],
-    [[[[4,2],2],6],[8,7]],
-    [[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]],
-  )
-
-  compare(
-    [[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]],
-    [[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]],
-    [[[[6,7],[6,7]],[[7,7],[0,7]]],[[[8,7],[7,7]],[[8,8],[8,0]]]],
-  )
-
-  pairs = [
+  pairs_list = [
     [[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]],
     [7,[[[3,7],[4,3]],[[6,3],[8,8]]]],
     [[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]],
@@ -205,19 +184,47 @@ def tests():
     [[[5,[7,4]],7],1],
     [[[[4,2],2],6],[8,7]],
   ]
-  pairs = [Pair.from_list(lst) for lst in pairs]
+  pairs = [Pair.from_list(lst) for lst in pairs_list]
+  expected = Pair.from_list([[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]])
   result = pairs[0]
   for p in pairs[1:]:
     result += p
-    print(result)
-  assert result == Pair.from_list([[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]])
+  assert result == expected
 
-  # 4. Magnitudes
+  pairs_list = [
+    [[[0,[5,8]],[[1,7],[9,6]]],[[4,[1,2]],[[1,4],2]]],
+    [[[5,[2,8]],4],[5,[[9,9],0]]],
+    [6,[[[6,2],[5,6]],[[7,6],[4,7]]]],
+    [[[6,[0,7]],[0,9]],[4,[9,[9,0]]]],
+    [[[7,[6,4]],[3,[1,3]]],[[[5,5],1],9]],
+    [[6,[[7,3],[3,2]]],[[[3,8],[5,7]],4]],
+    [[[[5,4],[7,7]],8],[[8,3],8]],
+    [[9,3],[[9,9],[6,[4,9]]]],
+    [[2,[[7,7],7]],[[5,8],[[9,3],[0,2]]]],
+    [[[[5,2],5],[8,[3,7]]],[[5,[7,5]],[4,4]]],
+  ]
+  pairs = [Pair.from_list(lst) for lst in pairs_list]
+  expected = Pair.from_list([[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]])
+  result = pairs[0]
+  for p in pairs[1:]:
+    result += p
+  assert result == expected
+
+  # 3. Magnitudes
   p = Pair.from_list([[[[0,7],4],[[7,8],[6,0]]],[8,1]])
   assert p.magnitude == 1384
 
   p = Pair.from_list([[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]])
   assert p.magnitude == 3488
+
+  # 4. Largest magnitude
+  pairs = [Pair.from_list(lst) for lst in pairs_list]
+  magnitude = max(
+    (p1.copy() + p2.copy()).magnitude
+    for p1, p2 in itertools.permutations(pairs, 2)
+  )
+  assert magnitude == 3993
+
 
 def part_1():
   """Simple part 1"""
@@ -230,7 +237,12 @@ def part_1():
 
 def part_2():
   """Complex part 2"""
-  pass
+  pairs = [Pair.from_list(lst) for lst in _load_numbers()]
+  magnitude = max(
+    (p1.copy() + p2.copy()).magnitude
+    for p1, p2 in itertools.permutations(pairs, 2)
+  )
+  print(f"PART 2: Largest magnitude is: {magnitude}")
 
 
 def _load_numbers():
@@ -244,5 +256,5 @@ def _load_numbers():
 
 if __name__ == "__main__":
   tests()
-  #part_1()
-  #part_2()
+  part_1()
+  part_2()
