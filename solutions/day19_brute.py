@@ -7,7 +7,7 @@ from joblib import Parallel, delayed
 import numpy as np
 
 
-_CACHE = Path("day19-cache.json")
+_CACHE = Path("models/day19-cache.json")
 
 
 def part_1():
@@ -144,11 +144,6 @@ def _rotation_matrices():
   return rots
 
 
-def part_2():
-  """Complex part 2"""
-  pass
-
-
 def _load():
   if _CACHE.exists():
     with _CACHE.open() as f:
@@ -225,4 +220,3 @@ if __name__ == "__main__":
   #test_1()
   #test_2()
   part_1()
-  part_2()
