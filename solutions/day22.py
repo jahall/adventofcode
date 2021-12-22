@@ -217,13 +217,13 @@ def part_1():
   """Easy part 1."""
   core = NaiveReactorCore()
   for i, (on, cube) in enumerate(_iter_reboot_steps(n=20), start=1):
-    print(f"Iteration {i}")
-    core.switch(cube, on=on, verbose=True)
+    core.switch(cube, on=on, verbose=False)
   print(f"PART 1: {core.num_cubes_on} cubes are on in the -50..50 grid")
   
 
 def part_2():
   """Complex part 2."""
+  # NOTE: Takes about 30 mins to run...but gets there in the end!
   core = ReactorCore()
   steps = list(_iter_reboot_steps())
   n_steps = len(steps)
