@@ -1,3 +1,4 @@
+import itertools
 from pathlib import Path
 
 
@@ -78,19 +79,28 @@ class Block:
     """Does this block overlap with another?"""
     return not self.outside(other)
 
+  def contiguous(self, other) -> bool:
+    """Can these blocks be collapsed together?
+    
+    Do they same two of the same axes and touch on the third?
+    """
+    xs = {self._x1, self._x2, other._x1, other._x2}
+    ys = {self._y1, self._y2, other._y1, other._y2}
+    zs = {self._z1, self._z2, other._z1, other._z2}
+    return len(xs) + len(ys) + len(zs) == 7
+
+  def union(self, *others) -> "Block":
+    """Find the smallest block that contains self and all others."""
+    xs, ys, zs = self._find_coordinate_list(others)
+    return Block(min(xs), max(xs), min(ys), max(ys), min(zs), max(zs))
+
   def iter_partitions(self, *others):
     """Iterate over the sub-blocks defined by the overlap.
     
     Note: when others is empty, this would just yield this block.
     When there is just one other, this will yield between 1 and 18 partitions.
     """
-    xs = [self._x1, self._x2]
-    ys = [self._y1, self._y2]
-    zs = [self._z1, self._z2]
-    for other in others:
-      xs.extend([other._x1, other._x2])
-      ys.extend([other._y1, other._y2])
-      zs.extend([other._z1, other._z2])
+    xs, ys, zs = self._find_coordinate_list(others)
     xs.sort()
     ys.sort()
     zs.sort()
@@ -100,6 +110,16 @@ class Block:
           partition = Block(x1, x2, y1, y2, z1, z2)
           if not partition.empty:
             yield partition
+
+  def _find_coordinate_list(self, others):
+    xs = [self._x1, self._x2]
+    ys = [self._y1, self._y2]
+    zs = [self._z1, self._z2]
+    for other in others:
+      xs.extend([other._x1, other._x2])
+      ys.extend([other._y1, other._y2])
+      zs.extend([other._z1, other._z2])
+    return xs, ys, zs
 
   def __hash__(self):
     return hash((self._x1, self._x2, self._y1, self._y2, self._z1, self._z2))
@@ -137,52 +157,80 @@ class ReactorCore:
       if verbose: print(f"- Already outside all existing on blocks")
       return
     self._discard_on_blocks_inside_switch_block(switch_block, verbose)
-    self._repartition_overlapping_blocks(switch_block, verbose)
-    if on:
-      self._on_blocks.add(switch_block)
-    self._consolidate()
-
-  def _discard_on_blocks_inside_switch_block(self, switch_block, verbose):
-    # These will get consumed regardless so don't need them.
-    if verbose:
-      for b in self._on_blocks:
-        if b.inside(switch_block):
-          print(f"- Discarding {b}")
-    self._on_blocks = {b for b in self._on_blocks if not b.inside(switch_block)}
-
-  def _repartition_overlapping_blocks(self, switch_block, verbose):
     # Find all current on blocks which overlap with the switch block, remove
     # them from current on blocks and iterate over resulting partitions
     overlapping = [b for b in self._on_blocks if b.overlaps(switch_block)]
     for b in overlapping:
       self._on_blocks.discard(b)
-    if verbose:
-      for b in overlapping:
-        print(f"- Overlaps with {b}")
+    if on:
+      self._on_blocks.add(switch_block)
+    if overlapping:
+      self._repartition_overlapping_blocks(switch_block, overlapping, verbose)
+
+  def _discard_on_blocks_inside_switch_block(self, switch_block, verbose):
+    # These will get consumed regardless so don't need them.
+    n = len(self._on_blocks)
+    self._on_blocks = {b for b in self._on_blocks if not b.inside(switch_block)}
+    discarded = n - len(self._on_blocks)
+    if verbose and discarded:
+      print(f"- ({len(self._on_blocks)}) Discarded {discarded} blocks inside the switch")
+
+  def _repartition_overlapping_blocks(self, switch_block, overlapping, verbose):
+    n_partitions = 0
     for partition in switch_block.iter_partitions(*overlapping):
       if partition.outside(switch_block) and any(partition.inside(b) for b in overlapping):
-        if verbose:
-          b = [b for b in overlapping if partition.inside(b)][0]
-          print(f"- Adding {partition} since inside {b}")
+        n_partitions += 1
         self._on_blocks.add(partition)
+    if verbose:
+      print(f"- ({len(self._on_blocks)}) Repartitioned {len(overlapping)} overlapping blocks to {n_partitions} new blocks")
+    union = switch_block.union(*overlapping)
+    self._consolidate(union, verbose)
 
-  def _consolidate(self):
-    """Consolidate on blocks to prevent explosion!"""
-    # TODO: implement this!
+  def _consolidate(self, block, verbose):
+    """Consolidate blocks within a given block to prevent explosion!"""
+    n = len(self._on_blocks)
+    eligible = {b for b in self._on_blocks if b.inside(block)}
+    ne = len(eligible)
+    while True:
+      combined = set()
+      # attempt to collapse big blocks first (seems to be useful in practise...)
+      sorted_eligible = sorted(eligible, key=lambda x: x.volume, reverse=True)
+      for b1, b2 in itertools.product(sorted_eligible, sorted_eligible):
+        if b1 in combined or b2 in combined or not b1.contiguous(b2):
+          continue
+        b = b1.union(b2)
+        self._on_blocks.discard(b1)
+        self._on_blocks.discard(b2)
+        self._on_blocks.add(b)
+        eligible.discard(b1)
+        eligible.discard(b2)
+        eligible.add(b)
+        combined.update({b1, b2})
+      if not combined:
+        nc = len(eligible)
+        if verbose and nc < ne:
+          print(f"- ({len(self._on_blocks)}) Consolidated {ne} partitioned blocks down to {nc}")
+        break
 
 
 def part_1():
   """Easy part 1."""
-  core = ReactorCore()
-  for on, cube in _iter_reboot_steps(n=20):
-    print(cube)
-    core.switch(cube, on=on, verbose=False)
+  core = NaiveReactorCore()
+  for i, (on, cube) in enumerate(_iter_reboot_steps(n=20), start=1):
+    print(f"Iteration {i}")
+    core.switch(cube, on=on, verbose=True)
   print(f"PART 1: {core.num_cubes_on} cubes are on in the -50..50 grid")
   
 
 def part_2():
   """Complex part 2."""
-  pass
+  core = ReactorCore()
+  steps = list(_iter_reboot_steps())
+  n_steps = len(steps)
+  for i, (on, cube) in enumerate(steps, start=1):
+    print(f"\nIteration {i} / {n_steps}")
+    core.switch(cube, on=on, verbose=True)
+  print(f"PART 2: {core.num_cubes_on} cubes are on in the full grid")
 
 
 def _iter_reboot_steps(n=None):
