@@ -120,8 +120,11 @@ class Burrow:
     return self._energy_used < other._energy_used
 
   def __repr__(self):
-    state = sorted(self._state.items())
-    return ",".join(f"{a}={r}/{l}" for (r, l), a in state)
+    parts = []
+    for room in [1, 2, 3, 4]:
+      part = f"{self._state.get((room, 0), '-')}{self._state.get((room, 1), '-')}"
+      parts.append(part)
+    return ",".join(parts)
 
 
 def part_1():
@@ -130,16 +133,20 @@ def part_1():
   queue = PriorityQueue()
   queue.put(burrow)
   finished = False
+  i = 0
   while not finished:
     burrow = queue.get()  # pops burrow with least energy used so far
-    print(f"\rEnergy used so far: {burrow.energy_used}", end="")
+    i += 1
+    if i % 100 == 0:
+      print(f"\rEnergy used so far: {burrow.energy_used} ({burrow})", end="")
     for next_burrow in burrow.iter_possible_next_moves():
       if next_burrow.is_complete:
         burrow = next_burrow
         finished = True
         break
       queue.put(next_burrow)
-  print(f"\nPART 1: Least energy required is {burrow.energy_used}")
+  print(f"\nFinal burrow: {burrow}")
+  print(f"PART 1: Least energy required to sort the amphipods is {burrow.energy_used}")
   
  
 def part_2():
@@ -147,7 +154,14 @@ def part_2():
   pass
 
 
-def _load_start_state():
+def _load_start_state(test=False):
+  if test:
+    return [
+      ["A", "B"],
+      ["D", "C"],
+      ["C", "B"],
+      ["A", "D"],
+    ]
   return [
     ["B", "D"],
     ["A", "A"],
