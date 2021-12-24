@@ -220,7 +220,7 @@ def part_1():
     core.switch(cube, on=on, verbose=False)
   print(f"PART 1: {core.num_cubes_on} cubes are on in the -50..50 grid")
   
-
+ 
 def part_2():
   """Complex part 2."""
   # NOTE: Takes about 30 mins to run...but gets there in the end!
