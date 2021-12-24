@@ -1,4 +1,4 @@
-from os import stat
+from collections import Counter
 from queue import PriorityQueue
 
 class Burrow:
@@ -9,9 +9,10 @@ class Burrow:
   """
   _allowable_hallway_locs = {0, 1, 3, 5, 7, 9, 10}
 
-  def __init__(self, state, energy_used=0):
+  def __init__(self, state, energy_used=0, prev_burrow=None):
     self._state = state
     self._energy_used = energy_used
+    self._prev_burrow = prev_burrow
 
   @classmethod
   def from_puzzle(cls, puzzle):
@@ -42,13 +43,18 @@ class Burrow:
     """How much energy has been used to get into this state?"""
     return self._energy_used
 
+  @property
+  def state_hash(self):
+    """Return a hash of the state."""
+    return hash(frozenset(self._state.items()))
+
   def new(self, old_loc, new_loc, steps):
     """Create a new burrow."""
     new_state = self._state.copy()
     amphipod = new_state.pop(old_loc)
     new_state[new_loc] = amphipod
     extra_energy = self._calc_energy_used(amphipod, steps)
-    return Burrow(new_state, energy_used=self._energy_used + extra_energy)
+    return Burrow(new_state, energy_used=self._energy_used + extra_energy, prev_burrow=self)
 
   def iter_possible_next_moves(self):
     """Iter over all possible next moves."""
@@ -129,22 +135,23 @@ class Burrow:
 
 def part_1():
   """Easy part 1."""
-  burrow = Burrow.from_puzzle(_load_start_state())
+  burrow = Burrow.from_puzzle(_load_start_state(test=False))
   queue = PriorityQueue()
   queue.put(burrow)
-  finished = False
+
+  used = {burrow.state_hash}
   i = 0
-  while not finished:
-    burrow = queue.get()  # pops burrow with least energy used so far
+  while True:
     i += 1
+    burrow = queue.get()  # pops burrow with least energy used so far
+    if burrow.is_complete:
+      break
+    used.add(burrow.state_hash)
     if i % 1000 == 0:
       print(f"\rEnergy used so far: {burrow.energy_used} ({burrow})", end="")
     for next_burrow in burrow.iter_possible_next_moves():
-      if next_burrow.is_complete:
-        burrow = next_burrow
-        finished = True
-        break
-      queue.put(next_burrow)
+      if next_burrow.state_hash not in used:
+        queue.put(next_burrow)
   print(f"\nFinal burrow: {burrow}")
   print(f"PART 1: Least energy required to sort the amphipods is {burrow.energy_used}")
   
