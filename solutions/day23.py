@@ -137,7 +137,7 @@ def part_1():
   while not finished:
     burrow = queue.get()  # pops burrow with least energy used so far
     i += 1
-    if i % 100 == 0:
+    if i % 1000 == 0:
       print(f"\rEnergy used so far: {burrow.energy_used} ({burrow})", end="")
     for next_burrow in burrow.iter_possible_next_moves():
       if next_burrow.is_complete:
