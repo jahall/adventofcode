@@ -1,4 +1,3 @@
-from collections import Counter
 from queue import PriorityQueue
 
 class Burrow:
