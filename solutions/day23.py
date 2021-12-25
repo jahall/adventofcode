@@ -135,17 +135,19 @@ class Burrow:
 
 def part_1():
   """Easy part 1."""
-  burrow = Burrow.from_puzzle(_load_start_state(test=False))
+  burrow = Burrow.from_puzzle(_load_start_state(test=True))
   queue = PriorityQueue()
   queue.put(burrow)
 
-  used = {burrow.state_hash}
+  used = set()
   i = 0
   while True:
     i += 1
     burrow = queue.get()  # pops burrow with least energy used so far
     if burrow.is_complete:
       break
+    elif burrow.state_hash in used:
+      continue
     used.add(burrow.state_hash)
     if i % 1000 == 0:
       print(f"\rEnergy used so far: {burrow.energy_used} ({burrow})", end="")
@@ -158,25 +160,39 @@ def part_1():
  
 def part_2():
   """Complex part 2."""
-  pass
+  state = _load_start_state(test=True, part=2)
+  print(state)
 
 
-def _load_start_state(test=False):
+def _load_start_state(test=False, part=1):
   if test:
-    return [
+    state = [
       ["A", "B"],
       ["D", "C"],
       ["C", "B"],
       ["A", "D"],
     ]
-  return [
-    ["B", "D"],
-    ["A", "A"],
-    ["D", "B"],
-    ["C", "C"],
-  ]
+  else:
+    state = [
+      ["B", "D"],
+      ["A", "A"],
+      ["D", "B"],
+      ["C", "C"],
+    ]
+  if part == 2:
+    extension = [
+      ["D", "D"],
+      ["B", "C"],
+      ["A", "B"],
+      ["C", "A"],
+    ]
+    state = [
+      a[:1] + b + a[-1:]
+      for a, b in zip(state, extension)
+    ]
+  return state
   
 
 if __name__ == "__main__":
-  part_1()
+  #part_1()
   part_2()
