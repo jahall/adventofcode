@@ -1,2 +1,2 @@
-# adventofcode-2021
-Solutions to advent of code 2021 challenges.
+# adventofcode
+Solutions to advent of code challenges. Did 2021 in Python...thinking about trying 2020 in golang.
