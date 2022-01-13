@@ -25,7 +25,7 @@ func part2(data []string) {
 	n4 := traverse(data, 1, 7)
 	n5 := traverse(data, 2, 1)
 	fmt.Printf(
-		"PART 1: Encountered %d x %d x %d x %d x %d = %d trees\n",
+		"PART 2: Encountered %d x %d x %d x %d x %d = %d trees\n",
 		n1, n2, n3, n4, n5, n1*n2*n3*n4*n5,
 	)
 }

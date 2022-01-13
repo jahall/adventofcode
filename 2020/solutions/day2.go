@@ -34,14 +34,16 @@ type PolicyPasswordPair struct {
 }
 
 func main() {
-	data := loadData()
-	part1(data)
-	part2(data)
+	part1()
+	part2()
 }
 
-func part1(data []PolicyPasswordPair) {
+func part1() {
+	// Having a go of using channels to pass data around
+	channel := make(chan PolicyPasswordPair)
+	go loadData(channel)
 	nValid := 0
-	for _, pair := range data {
+	for pair := range channel {
 		if pair.policy.isValidByBounds(pair.password) {
 			nValid++
 		}
@@ -49,9 +51,11 @@ func part1(data []PolicyPasswordPair) {
 	fmt.Printf("PART 1: %d valid passwords\n", nValid)
 }
 
-func part2(data []PolicyPasswordPair) {
+func part2() {
 	nValid := 0
-	for _, pair := range data {
+	channel := make(chan PolicyPasswordPair)
+	go loadData(channel)
+	for pair := range channel {
 		if pair.policy.isValidByLocation(pair.password) {
 			nValid++
 		}
@@ -59,20 +63,19 @@ func part2(data []PolicyPasswordPair) {
 	fmt.Printf("PART 2: %d valid passwords\n", nValid)
 }
 
-func loadData() []PolicyPasswordPair {
+func loadData(channel chan<- PolicyPasswordPair) {
 	file, err := os.Open("/Users/Joe/src/adventofcode/2020/data/day2.txt")
 	check(err)
 	scanner := bufio.NewScanner((file))
-	var pairs []PolicyPasswordPair
 	re := regexp.MustCompile("[- ]")
 	for scanner.Scan() {
 		line := strings.Split(scanner.Text(), ": ")
 		parts := re.Split(line[0], 3)
 		policy := Policy{char: parts[2], lower: atoi(parts[0]), upper: atoi(parts[1])}
 		pair := PolicyPasswordPair{policy: policy, password: line[1]}
-		pairs = append(pairs, pair)
+		channel <- pair
 	}
-	return pairs
+	close(channel)
 }
 
 // Utility to simply ignore errors on conversion
