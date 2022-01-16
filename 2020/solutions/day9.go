@@ -50,6 +50,41 @@ func NewXmas(numbers []int, preamble int) *Xmas {
 	return &xmas
 }
 
+// Find the encryption weakness
+func (x *Xmas) FindWeakness() int {
+	_, invalidNum := x.FindBreak()
+	for i := 0; i < len(x.numbers); i++ {
+		agg, offset := 0, 0
+		for {
+			agg += x.numbers[i+offset]
+			if agg == invalidNum {
+				min, max := x.findMinMax(x.numbers[i : i+offset+1])
+				return min + max
+			}
+			if agg > invalidNum {
+				break
+			}
+			offset++
+		}
+	}
+	return -1
+}
+
+func (x *Xmas) findMinMax(nums []int) (int, int) {
+	// Interestingly no builtins for finding min / max of slice
+	// https://stackoverflow.com/questions/34259800/is-there-a-built-in-min-function-for-a-slice-of-int-arguments-or-a-variable-numb
+	min, max := -1, -1
+	for _, val := range nums {
+		if min == -1 || val < min {
+			min = val
+		}
+		if max == -1 || val > max {
+			max = val
+		}
+	}
+	return min, max
+}
+
 // Find the breaking number (and its index)
 func (x *Xmas) FindBreak() (int, int) {
 	for {
@@ -90,7 +125,7 @@ func (x *Xmas) advance() {
 func main() {
 	xmas := LoadXmas(25)
 	part1(xmas)
-	//part2()
+	part2(xmas)
 }
 
 func part1(xmas *Xmas) {
@@ -98,13 +133,9 @@ func part1(xmas *Xmas) {
 	fmt.Printf("PART 1: First number is %d at index %d\n", num, index)
 }
 
-func part2() {
-	return
-}
-
-func atoi(str string) (int, error) {
-	val, err := strconv.Atoi(str)
-	return val, err
+func part2(xmas *Xmas) {
+	num := xmas.FindWeakness()
+	fmt.Printf("PART 2: Encryption weakness is %d\n", num)
 }
 
 func check(e error) {
