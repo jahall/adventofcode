@@ -73,6 +73,9 @@ func (s *Scenario) DepartureTimeMatchingPositions() int {
 				// and slowly piecing together this function - had to do it
 				// in Python first! ...assuming the fact the bus ids are prime
 				// numbers is somehow important...
+
+				// NOTE 2: Apparently something to do with Chinese Remainder Theorem
+				// https://www.reddit.com/r/adventofcode/comments/kc4njx/2020_day_13_solutions/
 				increment *= bus.id
 				break
 			}
