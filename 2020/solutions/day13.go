@@ -9,7 +9,8 @@ import (
 )
 
 type Bus struct {
-	id int
+	id       int
+	position int
 }
 
 func (b *Bus) Departing(timestamp int) bool {
@@ -34,18 +35,20 @@ func LoadScenario(test bool) *Scenario {
 		if scenario.arrival == 0 {
 			scenario.arrival, _ = strconv.Atoi(line)
 		} else {
-			for _, idStr := range strings.Split(line, ",") {
+			for pos, idStr := range strings.Split(line, ",") {
 				if idStr == "x" {
 					continue
 				}
 				id, _ := strconv.Atoi(idStr)
-				scenario.buses = append(scenario.buses, &Bus{id})
+				scenario.buses = append(scenario.buses, &Bus{id, pos})
 			}
+			break
 		}
 	}
 	return &scenario
 }
 
+// Find earliest departure time
 func (s *Scenario) EarliestDeparture() (*Bus, int) {
 	wait := 0
 	for {
@@ -58,13 +61,35 @@ func (s *Scenario) EarliestDeparture() (*Bus, int) {
 	}
 }
 
+// Find earliest departure time matching their position
+func (s *Scenario) DepartureTimeMatchingPositions() int {
+	timestamp := 0
+	increment := s.buses[0].id
+	for _, bus := range s.buses[1:] {
+		for {
+			if (timestamp+bus.position)%bus.id == 0 {
+				// NOTE: it was very painful figuring out and coming to the
+				// conclusion that the increments can be increased multiplicatively
+				// and slowly piecing together this function - had to do it
+				// in Python first! ...assuming the fact the bus ids are prime
+				// numbers is somehow important...
+				increment *= bus.id
+				break
+			}
+			timestamp += increment
+		}
+	}
+	return timestamp
+}
+
 func part1(scenario *Scenario) {
 	bus, wait := scenario.EarliestDeparture()
 	fmt.Printf("PART 1: Depart on bus %+v after %d mins = %d\n", *bus, wait, bus.id*wait)
 }
 
 func part2(scenario *Scenario) {
-	fmt.Printf("PART 2: Yo\n")
+	timestamp := scenario.DepartureTimeMatchingPositions()
+	fmt.Printf("PART 2: Silly departure time is %d\n", timestamp)
 }
 
 func main() {
