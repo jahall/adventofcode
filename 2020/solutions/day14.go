@@ -5,25 +5,67 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
 
 // Struct to control access to memory
 type Memory struct {
-	memory  map[uint64]uint64
-	onMask  uint64
-	offMask uint64
+	version      int
+	memory       map[uint64]uint64
+	offMask      uint64
+	onMask       uint64
+	floatingMask uint64
 }
 
-func NewMemory() *Memory {
-	return &Memory{memory: make(map[uint64]uint64)}
+func NewMemory(version int) *Memory {
+	return &Memory{version: version, memory: make(map[uint64]uint64)}
 }
 
 func (m *Memory) Update(address uint64, value uint64) {
-	value = value | m.onMask
-	value = value & m.offMask
-	m.memory[address] = value
+	if m.version == 1 {
+		value = value & ^m.offMask
+		value = value | m.onMask
+		m.memory[address] = value
+
+	} else if m.version == 2 {
+		address = address | m.onMask
+		address = address & ^m.floatingMask // turn off all floating bits for now
+		for _, mask := range m.floatingMasks() {
+			m.memory[address|mask] = value
+		}
+	}
+}
+
+func (m *Memory) floatingMasks() []uint64 {
+	bits := m.toBits(m.floatingMask)
+	return m.combinations(bits)
+}
+
+func (m *Memory) toBits(value uint64) []uint64 {
+	var bits []uint64
+	i := 0
+	for value != 0 {
+		if value&1 == 1 {
+			bits = append(bits, pow2(i))
+		}
+		value >>= 1
+		i++
+	}
+	return bits
+}
+
+func (m *Memory) combinations(bits []uint64) []uint64 {
+	if len(bits) == 0 {
+		return []uint64{0}
+	}
+	var combos []uint64
+	for _, combo := range m.combinations(bits[1:]) {
+		combos = append(combos, combo)
+		combos = append(combos, bits[0]|combo)
+	}
+	return combos
 }
 
 func (m *Memory) Total() uint64 {
@@ -42,13 +84,15 @@ type Op interface {
 
 // Update the memories input mask
 type Mask struct {
-	on  uint64
-	off uint64
+	off      uint64
+	on       uint64
+	floating uint64
 }
 
 func (m Mask) apply(mem *Memory) {
-	mem.onMask = m.on
 	mem.offMask = m.off
+	mem.onMask = m.on
+	mem.floatingMask = m.floating
 }
 
 func (m Mask) show() {
@@ -75,7 +119,8 @@ func LoadOps(test bool) []Op {
 	if test {
 		suffix = "_test"
 	}
-	file, _ := os.Open("/Users/Joe/src/adventofcode/2020/data/day14" + suffix + ".txt")
+	path, _ := filepath.Abs(filepath.Join("data", "day14"+suffix+".txt"))
+	file, _ := os.Open(path)
 	var ops []Op
 	scanner := bufio.NewScanner((file))
 	for scanner.Scan() {
@@ -95,16 +140,18 @@ func LoadOps(test bool) []Op {
 func makeMask(parts []string) Mask {
 	maskStr := parts[1]
 	n := len(maskStr)
-	var on, off uint64
+	var off, on, floating uint64
 	for i := 0; i < n; i++ {
 		switch string(maskStr[n-1-i]) {
-		case "1":
-			on += pow2(i)
 		case "0":
 			off += pow2(i)
+		case "1":
+			on += pow2(i)
+		case "X":
+			floating += pow2(i)
 		}
 	}
-	return Mask{on, ^off}
+	return Mask{on: on, off: off, floating: floating}
 }
 
 func makeUpdate(parts []string) Update {
@@ -119,17 +166,19 @@ func pow2(i int) uint64 {
 }
 
 func part1(ops []Op) {
-	mem := NewMemory()
+	mem := NewMemory(1)
 	for _, op := range ops {
-		//op.show()
 		op.apply(mem)
 	}
 	fmt.Printf("PART 1: Total is %d\n", mem.Total())
 }
 
 func part2(ops []Op) {
-	//mem := Memory{}
-	fmt.Printf("PART 2: \n")
+	mem := NewMemory(2)
+	for _, op := range ops {
+		op.apply(mem)
+	}
+	fmt.Printf("PART 2: Total using v2 is %d\n", mem.Total())
 }
 
 func main() {
