@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -19,7 +20,8 @@ func LoadAdapterBag(test bool) *AdapterBag {
 	if test {
 		suffix = "_test"
 	}
-	file, err := os.Open("/Users/Joe/src/adventofcode/2020/data/day10" + suffix + ".txt")
+	path, _ := filepath.Abs(filepath.Join("data", "day10"+suffix+".txt"))
+	file, err := os.Open(path)
 	check(err)
 	var ratings []int
 	scanner := bufio.NewScanner((file))

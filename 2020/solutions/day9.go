@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -17,7 +18,8 @@ type Xmas struct {
 }
 
 func LoadXmas(preamble int) *Xmas {
-	file, err := os.Open("/Users/Joe/src/adventofcode/2020/data/day9.txt")
+	path, _ := filepath.Abs(filepath.Join("data", "day9.txt"))
+	file, err := os.Open(path)
 	check(err)
 	var numbers []int
 	scanner := bufio.NewScanner((file))

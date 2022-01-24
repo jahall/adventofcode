@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -89,7 +90,8 @@ func findEmptySeats(seats []Seat, minRow int, maxRow int) map[int]Seat {
 }
 
 func loadSeats() []Seat {
-	file, err := os.Open("/Users/Joe/src/adventofcode/2020/data/day5.txt")
+	path, _ := filepath.Abs(filepath.Join("data", "day5.txt"))
+	file, err := os.Open(path)
 	check(err)
 	var seats []Seat
 	scanner := bufio.NewScanner((file))

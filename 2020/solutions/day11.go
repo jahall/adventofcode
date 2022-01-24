@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -24,7 +25,8 @@ func LoadWaitingArea(test bool) *WaitingArea {
 	if test {
 		suffix = "_test"
 	}
-	file, _ := os.Open("/Users/Joe/src/adventofcode/2020/data/day11" + suffix + ".txt")
+	path, _ := filepath.Abs(filepath.Join("data", "day11"+suffix+".txt"))
+	file, _ := os.Open(path)
 	seats := make(map[Seat]bool)
 	cols, row := 0, 0
 	scanner := bufio.NewScanner((file))

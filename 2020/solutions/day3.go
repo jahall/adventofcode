@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -44,7 +45,8 @@ func traverse(data []string, drow int, dcol int) int {
 }
 
 func loadData() []string {
-	file, err := os.Open("/Users/Joe/src/adventofcode/2020/data/day3.txt")
+	path, _ := filepath.Abs(filepath.Join("data", "day3.txt"))
+	file, err := os.Open(path)
 	check(err)
 	scanner := bufio.NewScanner((file))
 	var grid []string

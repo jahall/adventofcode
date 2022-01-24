@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -19,7 +20,8 @@ func LoadActions(test bool) []Action {
 	if test {
 		suffix = "_test"
 	}
-	file, _ := os.Open("/Users/Joe/src/adventofcode/2020/data/day12" + suffix + ".txt")
+	path, _ := filepath.Abs(filepath.Join("data", "day12"+suffix+".txt"))
+	file, _ := os.Open(path)
 	var actions []Action
 	scanner := bufio.NewScanner((file))
 	for scanner.Scan() {

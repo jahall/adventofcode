@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -40,7 +41,8 @@ func part2(data []int) {
 }
 
 func loadData() []int {
-	file, err := os.Open("/Users/Joe/src/adventofcode/2020/data/day1.txt")
+	path, _ := filepath.Abs(filepath.Join("data", "day1.txt"))
+	file, err := os.Open(path)
 	check(err)
 	scanner := bufio.NewScanner((file))
 	var numbers []int

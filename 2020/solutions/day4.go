@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -119,7 +120,8 @@ func part2() {
 }
 
 func loadPassports(channel chan<- Passport) {
-	file, err := os.Open("/Users/Joe/src/adventofcode/2020/data/day4.txt")
+	path, _ := filepath.Abs(filepath.Join("data", "day4.txt"))
+	file, err := os.Open(path)
 	check(err)
 	scanner := bufio.NewScanner((file))
 	passport := makePassport()

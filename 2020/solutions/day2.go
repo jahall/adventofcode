@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -64,7 +65,8 @@ func part2() {
 }
 
 func loadData(channel chan<- PolicyPasswordPair) {
-	file, err := os.Open("/Users/Joe/src/adventofcode/2020/data/day2.txt")
+	path, _ := filepath.Abs(filepath.Join("data", "day2.txt"))
+	file, err := os.Open(path)
 	check(err)
 	scanner := bufio.NewScanner((file))
 	re := regexp.MustCompile("[- ]")

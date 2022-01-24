@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -72,7 +73,8 @@ func loadBags() map[string]*Bag {
 		return bags[color]
 	}
 
-	file, err := os.Open("/Users/Joe/src/adventofcode/2020/data/day7.txt")
+	path, _ := filepath.Abs(filepath.Join("data", "day7.txt"))
+	file, err := os.Open(path)
 	check(err)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {

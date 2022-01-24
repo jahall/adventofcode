@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -86,7 +87,8 @@ func switchJmpNop(i *Instruction) {
 }
 
 func loadProgram() *Program {
-	file, err := os.Open("/Users/Joe/src/adventofcode/2020/data/day8.txt")
+	path, _ := filepath.Abs(filepath.Join("data", "day8.txt"))
+	file, err := os.Open(path)
 	check(err)
 	var instructions []*Instruction
 	scanner := bufio.NewScanner(file)

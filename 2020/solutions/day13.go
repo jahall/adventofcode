@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -27,7 +28,8 @@ func LoadScenario(test bool) *Scenario {
 	if test {
 		suffix = "_test"
 	}
-	file, _ := os.Open("/Users/Joe/src/adventofcode/2020/data/day13" + suffix + ".txt")
+	path, _ := filepath.Abs(filepath.Join("data", "day13"+suffix+".txt"))
+	file, _ := os.Open(path)
 	scenario := Scenario{}
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
