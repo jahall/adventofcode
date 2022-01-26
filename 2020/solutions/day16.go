@@ -101,31 +101,103 @@ func LoadNotes(test bool) *Notes {
 	return &notes
 }
 
+// Sum up values for all invalid fields
 func (notes *Notes) ScanningErrorRate() int {
 	errorRate := 0
 	for _, ticket := range notes.nearbyTickets {
-		for _, value := range ticket.values {
-			invalid := true
-			for _, field := range notes.ticketFields {
-				if field.IsValid(value) {
-					invalid = false
-				}
+		errorRate += notes.ticketError(ticket)
+	}
+	return errorRate
+}
+
+func (notes *Notes) ticketError(ticket *Ticket) int {
+	err := 0
+	for _, value := range ticket.values {
+		invalid := true
+		for _, field := range notes.ticketFields {
+			if field.IsValid(value) {
+				invalid = false
 			}
-			if invalid {
-				errorRate += value
+		}
+		if invalid {
+			err += value
+		}
+	}
+	return err
+}
+
+// Find mapping from field to correct index
+func (notes *Notes) CalcFieldToIndex() map[string]int {
+	possibilities := notes.findPossibilities()
+	numFields := len(notes.ticketFields)
+	fieldToIndex := make(map[string]int)
+	for len(fieldToIndex) < numFields {
+		// 1. Find unique possibilities
+		for name, indices := range possibilities {
+			if len(indices) == 1 {
+				for idx := range indices {
+					fieldToIndex[name] = idx
+				}
+				delete(possibilities, name)
+			}
+		}
+		// 2. Refine remaining possibilities
+		for _, idx := range fieldToIndex {
+			for name := range possibilities {
+				delete(possibilities[name], idx)
 			}
 		}
 	}
-	return errorRate
+	return fieldToIndex
+}
+
+func (notes *Notes) findPossibilities() map[string]map[int]bool {
+	possibilities := notes.initPossibilities()
+	for _, ticket := range notes.nearbyTickets {
+		if notes.ticketError(ticket) > 0 {
+			continue
+		}
+		for _, field := range notes.ticketFields {
+			for i, value := range ticket.values {
+				if !field.IsValid(value) {
+					delete(possibilities[field.name], i)
+				}
+			}
+		}
+	}
+	return possibilities
+}
+
+func (notes *Notes) initPossibilities() map[string]map[int]bool {
+	possibilities := make(map[string]map[int]bool)
+	numFields := len(notes.ticketFields)
+	for _, field := range notes.ticketFields {
+		possibilities[field.name] = make(map[int]bool)
+		for i := 0; i < numFields; i++ {
+			possibilities[field.name][i] = true
+		}
+	}
+	return possibilities
 }
 
 func part1(notes *Notes) {
 	fmt.Printf("PART 1: Scanning error rate is %d\n", notes.ScanningErrorRate())
 }
 
+func part2(notes *Notes) {
+	fieldToIndex := notes.CalcFieldToIndex()
+	result := 1
+	for name, idx := range fieldToIndex {
+		if strings.HasPrefix(name, "departure") {
+			result *= notes.yourTicket.values[idx]
+		}
+	}
+	fmt.Printf("PART 2: Product of departure field values is %d\n", result)
+}
+
 func main() {
 	test := len(os.Args[1:]) == 1 && os.Args[1] == "test"
 	notes := LoadNotes(test)
 	part1(notes)
-	//part2(notes)
+	part2(notes)
 }
