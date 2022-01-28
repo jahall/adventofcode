@@ -102,19 +102,38 @@ func LoadExpressions(test bool) []Expression {
 	return expressions
 }
 
-func part1(expressions []Expression) {
-	result := 0
-	for _, e := range expressions {
-		result += e.Eval("=")
+// NOTE: Pointless use of worker pool...but mainly for my own understanding
+func worker(jobs <-chan Expression, results chan<- int, precedence string) {
+	for exp := range jobs {
+		results <- exp.Eval(precedence)
 	}
+}
+
+func evalAll(expressions []Expression, precedence string) int {
+	n := len(expressions)
+	jobs := make(chan Expression, n)
+	results := make(chan int, n)
+	for w := 1; w <= 10; w++ {
+		go worker(jobs, results, precedence)
+	}
+	for _, exp := range expressions {
+		jobs <- exp
+	}
+	close(jobs)
+	result := 0
+	for i := 0; i < n; i++ {
+		result += <-results
+	}
+	return result
+}
+
+func part1(expressions []Expression) {
+	result := evalAll(expressions, "=")
 	fmt.Printf("PART 1: Sum of all expressions (with = precedence) is %d\n", result)
 }
 
 func part2(expressions []Expression) {
-	result := 0
-	for _, e := range expressions {
-		result += e.Eval("+*")
-	}
+	result := evalAll(expressions, "+*")
 	fmt.Printf("PART 2: Sum of all expressions (with +* precedence) is %d\n", result)
 }
 
