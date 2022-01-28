@@ -15,49 +15,75 @@ type Expression struct {
 }
 
 func NewExpression(str string) Expression {
-	if string(str[0]) != "(" {
-		str = "(" + str + ")"
-	}
-	str = strings.ReplaceAll(str, " ", "")
+	str = strings.ReplaceAll(str, " ", "") + "$"
 	return Expression{str}
 }
 
-func (e Expression) Eval() int {
-	value, _ := e.eval(0, 0)
+func (e Expression) Eval(precedence string) int {
+	value, _ := e.eval(precedence, 0)
 	return value
 }
 
 // Returns value and new offset, assumes only numbers 0-9 will appear
-func (e Expression) eval(offset int, depth int) (int, int) {
-	value, op := 0, ""
+func (e Expression) eval(precedence string, offset int) (int, int) {
+	values := []int{}
+	ops := []string{""}
 	for {
-		if offset >= len(e.str) {
-			return value, offset
-		}
 		char := string(e.str[offset])
-		subValue := -1
+		if char == "$" || char == ")" {
+			result := -1
+			switch precedence {
+			case "=":
+				result = e.combineValuesSamePrecedence(values, ops)
+			case "+*":
+				result = e.combineValuesAdditionPrecedence(values, ops)
+			}
+			return result, offset
+		}
 		switch char {
 		case "(":
-			subValue, offset = e.eval(offset+1, depth+1)
-		case ")":
-			return value, offset
+			var value int
+			value, offset = e.eval(precedence, offset+1)
+			values = append(values, value)
 		case "+", "*":
-			op = char
+			ops = append(ops, char)
 		default:
-			subValue, _ = strconv.Atoi(char)
-		}
-		if subValue > -1 {
-			switch op {
-			case "+":
-				value += subValue
-			case "*":
-				value *= subValue
-			default:
-				value = subValue
-			}
+			value, _ := strconv.Atoi(char)
+			values = append(values, value)
 		}
 		offset++
 	}
+}
+
+func (e Expression) combineValuesSamePrecedence(values []int, ops []string) int {
+	var result int
+	for i, val := range values {
+		switch ops[i] {
+		case "":
+			result = val
+		case "+":
+			result += val
+		case "*":
+			result *= val
+		}
+	}
+	return result
+}
+
+func (e Expression) combineValuesAdditionPrecedence(values []int, ops []string) int {
+	for i := range values {
+		if ops[i] == "+" {
+			values[i] = values[i] + values[i-1]
+			values[i-1] = -1
+		}
+	}
+	result := 1
+	for _, val := range values {
+		if val != -1 {
+			result *= val
+		}
+	}
+	return result
 }
 
 func LoadExpressions(test bool) []Expression {
@@ -79,13 +105,22 @@ func LoadExpressions(test bool) []Expression {
 func part1(expressions []Expression) {
 	result := 0
 	for _, e := range expressions {
-		result += e.Eval()
+		result += e.Eval("=")
 	}
-	fmt.Printf("PART 1: Sum of all expressions is %d\n", result)
+	fmt.Printf("PART 1: Sum of all expressions (with = precedence) is %d\n", result)
+}
+
+func part2(expressions []Expression) {
+	result := 0
+	for _, e := range expressions {
+		result += e.Eval("+*")
+	}
+	fmt.Printf("PART 2: Sum of all expressions (with +* precedence) is %d\n", result)
 }
 
 func main() {
 	test := len(os.Args[1:]) == 1 && os.Args[1] == "test"
 	expressions := LoadExpressions(test)
 	part1(expressions)
+	part2(expressions)
 }
