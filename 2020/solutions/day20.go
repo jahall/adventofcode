@@ -344,6 +344,6 @@ func part2(image *Image) {
 func main() {
 	test := len(os.Args[1:]) == 1 && os.Args[1] == "test"
 	image := LoadImage(test)
-	//part1(image)
+	part1(image)
 	part2(image)
 }
