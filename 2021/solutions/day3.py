@@ -1,58 +1,63 @@
+from collections import Counter
 from pathlib import Path
 
-import numpy as np
-from numpy.lib.twodim_base import diag
 
 def part_1():
   """Simple part 1"""
-  diagnostics = _get_diagnostics()
-  threshold = len(diagnostics) / 2
-  gamma, epsilon = [], []
-  for col in diagnostics.T:
-    most_freq = 0 if col.sum() < threshold else 1
-    gamma.append(most_freq)
-    epsilon.append(int(not most_freq))
-  gamma = _to_value(gamma)
-  epsilon = _to_value(epsilon)
+  diagnostics, nbits = _get_diagnostics()
+  gamma, epsilon = "", ""
+  for bit in range(nbits):
+    counts = Counter([row[bit] for row in diagnostics])
+    if counts.get("1", 0) >= counts.get("0", 0):
+      gamma += "1"
+      epsilon += "0"
+    else:
+      gamma += "0"
+      epsilon += "1"
+  gamma = int(gamma, 2)  # thank you Johnny Kerr!
+  epsilon = int(epsilon, 2)
   print(f"PART 1: Power consumption: {gamma} x {epsilon} = {gamma * epsilon}")
 
 
 def part_2():
   """Tricky part 2"""
-  ox_gen = _extract_rating(lambda col: 1 if col.sum() >= (len(col) / 2) else 0)
-  co2_scrub = _extract_rating(lambda col: 0 if col.sum() >= (len(col) / 2) else 1)
+  ox_gen = _extract_rating(get_filter_value=_get_most_common)
+  co2_scrub = _extract_rating(get_filter_value=_get_least_common)
   print(f"PART 2: Life support rating is: {ox_gen} x {co2_scrub} = {ox_gen * co2_scrub}")
 
 
-def _extract_rating(condition):
-  diagnostics = _get_diagnostics()
+def _extract_rating(get_filter_value):
+  diagnostics, nbits = _get_diagnostics()
   while True:
-    for bit_pos in range(diagnostics.shape[1]):
-      col = diagnostics[:, bit_pos]
-      diagnostics = diagnostics[col == condition(col)]
+    for bit in range(nbits):
+      counts = Counter([row[bit] for row in diagnostics])
+      filter_value = get_filter_value(counts)
+      diagnostics = [row for row in diagnostics if row[bit] == filter_value]
       if len(diagnostics) == 1:
-        return _to_value(diagnostics[0,:])
+        return int(diagnostics[0], 2)
 
 
-def _to_value(num_list):
-  val = 0
-  for p, v in enumerate(reversed(num_list)):
-    val += v * (2 ** p)
-  return val
+def _get_most_common(counts):
+    if counts.get("1", 0) >= counts.get("0", 0):
+      return "1"
+    else:
+      return "0"
+
+
+def _get_least_common(counts):
+    if counts.get("1", 0) < counts.get("0", 0):
+      return "1"
+    else:
+      return "0"
 
 
 def _get_diagnostics():
-  arr = []
-  for row in _iter_rows():
-    arr.append([int(bit) for bit in row])
-  return np.array(arr)
-
-
-def _iter_rows():
   input_file = Path(__file__).parent.parent / "data" / "day3.txt"
   with input_file.open() as f:
-    for line in f:
-      yield line.strip()
+    diagnostics = [line.strip() for line in f]
+    # extract nbits for convenience
+    nbits = len(diagnostics[0])
+    return diagnostics, nbits
 
 
 if __name__ == "__main__":
