@@ -33,8 +33,7 @@ mydata = open(path) do file
         end
     end
     push!(elves_calories, current)
-    sort!(elves_calories)
-    n = length(elves_calories)
-    solution = sum(view(elves_calories, n-2:n))
+    sort!(elves_calories, rev=true)
+    solution = sum(view(elves_calories, 1:3))
     print("PART 2: ", solution)
 end
