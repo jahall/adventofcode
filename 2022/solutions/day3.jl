@@ -1,11 +1,13 @@
-path = "C:\\Users\\7082tr\\code\\adventofcode\\2022\\data\\day3.txt"
-
+"Utility function to load vector of rucksacks"
 function get_rucksacks()
+    root = dirname(dirname(@__FILE__))
+    path = joinpath(root, "data", "day3.txt")
     open(path) do file
         return readlines(file)
     end
 end
 
+"Split a rucksack into its two compartments"
 function split(rucksack)
     n = length(rucksack) ÷ 2
     compartment1 = Set(view(rucksack, 1:n))
@@ -13,15 +15,18 @@ function split(rucksack)
     (compartment1, compartment2)
 end
 
-priorities = Dict()
-items = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-for (priority, item) in enumerate(items)
-    global priorities
-    priorities[item] = priority
+function get_priorities()
+    priorities = Dict()
+    items = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    for (priority, item) in enumerate(items)
+        priorities[item] = priority
+    end
+    priorities
 end
 
 # Part 1
 rucksacks = get_rucksacks()
+priorities = get_priorities()
 score = 0
 for rucksack in rucksacks
     global score

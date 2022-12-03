@@ -1,39 +1,41 @@
-
-path = "C:\\Users\\7082tr\\code\\adventofcode\\2022\\data\\day1.txt"
+function get_lines()
+    root = dirname(dirname(@__FILE__))
+    path = joinpath(root, "data", "day1.txt")
+    open(path) do file
+        return readlines(file)
+    end
+end
 
 # Part 1
-open(path) do file
-    lines = readlines(file)
-    biggest = 0
-    current = 0
-    for i in 1:length(lines)
-        if lines[i] == ""
-            current = 0
-        else
-            current += parse(Int64, lines[i])
-            if current > biggest
-                biggest = current
-            end
+lines = get_lines()
+biggest = 0
+current = 0
+for i in 1:length(lines)
+    global current, biggest
+    if lines[i] == ""
+        current = 0
+    else
+        current += parse(Int64, lines[i])
+        if current > biggest
+            biggest = current
         end
     end
-    print("PART 1: ", biggest, "\n")
 end
+println("PART 1: $biggest")
 
 # Part 2
-mydata = open(path) do file
-    lines = readlines(file)
-    elves_calories = []
-    current = 0
-    for i in 1:length(lines)
-        if lines[i] == ""
-            push!(elves_calories, current)
-            current = 0
-        else
-            current += parse(Int64, lines[i])
-        end
+elves_calories = []
+current = 0
+for i in 1:length(lines)
+    global current
+    if lines[i] == ""
+        push!(elves_calories, current)
+        current = 0
+    else
+        current += parse(Int64, lines[i])
     end
-    push!(elves_calories, current)
-    sort!(elves_calories, rev=true)
-    solution = sum(view(elves_calories, 1:3))
-    print("PART 2: ", solution)
 end
+push!(elves_calories, current)
+sort!(elves_calories, rev=true)
+solution = sum(view(elves_calories, 1:3))
+println("PART 2: $solution")
