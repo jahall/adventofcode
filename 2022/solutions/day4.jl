@@ -30,4 +30,10 @@ println("PART 1: $score")
 
 # Part 2
 score = 0
+for ((p1_s, p1_e), (p2_s, p2_e)) in pairs
+    global score
+    if !((p1_s > p2_e) || (p1_e < p2_s))
+        score += 1
+    end
+end
 println("PART 2: $score")
