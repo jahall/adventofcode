@@ -18,9 +18,13 @@ end
 # Part 1
 pairs = get_range_pairs()
 score = 0
-for (p1_s, p1_e), (p2_s, p2_e) in pairs
+for ((p1_s, p1_e), (p2_s, p2_e)) in pairs
     global score
-    
+    if (p1_s >= p2_s) && (p1_e <= p2_e)
+        score += 1
+    elseif (p2_s >= p1_s) && (p2_e <= p1_e)
+        score += 1
+    end
 end
 println("PART 1: $score")
 
