@@ -22,8 +22,7 @@ function get_stacks()
     end
 end
 
-
-"Utility function to load stacks"
+"Utility function to load stack operations"
 function get_ops()
     root = dirname(dirname(@__FILE__))
     path = joinpath(root, "data", "day5.txt")
@@ -42,23 +41,29 @@ function get_ops()
     ops
 end
 
-# Part 1
-stacks = get_stacks()
-for (num, source, target) in get_ops()
-    for i in 1:num
-        val = pop!(stacks[source])
-        push!(stacks[target], val)
+"Part 1"
+function part1()
+    stacks = get_stacks()
+    for (num, source, target) in get_ops()
+        for i in 1:num
+            val = pop!(stacks[source])
+            push!(stacks[target], val)
+        end
     end
+    code = string([pop!(stack) for stack in stacks]...)
+    println("PART 1: $code")
 end
-code = string([pop!(stack) for stack in stacks]...)
-println("PART 1: $code")
 
-
-# Part 2
-stacks = get_stacks()
-for (num, source, target) in get_ops()
-    vals = [pop!(stacks[source]) for _ = 1:num]
-    [push!(stacks[target], val) for val in vals[end:-1:1]]
+"Part 2"
+function part2()
+    stacks = get_stacks()
+    for (num, source, target) in get_ops()
+        vals = [pop!(stacks[source]) for _ = 1:num]
+        [push!(stacks[target], val) for val in vals[end:-1:1]]
+    end
+    code = string([pop!(stack) for stack in stacks]...)
+    println("PART 2: $code")
 end
-code = string([pop!(stack) for stack in stacks]...)
-println("PART 2: $code")
+
+part1()
+part2()
