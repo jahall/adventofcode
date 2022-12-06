@@ -9,13 +9,11 @@ end
 
 "Common functionality"
 function find_marker(stream, ndistinct)
-    buffer = copy(view(stream, 1:ndistinct - 1))
-    for i = ndistinct:length(stream)
-        append!(buffer, stream[i])
-        if length(Set(buffer)) == ndistinct
-            return i
+    for i = 1:length(stream) - ndistinct + 1
+        marker = i + ndistinct - 1
+        if length(Set(view(stream, i:marker))) == ndistinct
+            return marker
         end
-        popfirst!(buffer)
     end
 end
 
