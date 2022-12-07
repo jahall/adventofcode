@@ -98,11 +98,8 @@ function part1()
     root = construct_tree()
     total = 0
     for node in traverse(root)
-        if !isdir(node)
-            continue
-        end
         s = size(node)
-        if s <= 100000
+        if isdir(node) && s <= 100_000
             total += s
         end
     end
@@ -115,11 +112,8 @@ function part2()
     required = 30000000 - (70000000 - size(root))
     smallest = 100000000
     for node in traverse(root)
-        if !isdir(node)
-            continue
-        end
         s = size(node)
-        if (s >= required) && (s < smallest)
+        if isdir(node) && (s >= required) && (s < smallest)
             smallest = s
         end
     end
