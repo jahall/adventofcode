@@ -1,24 +1,32 @@
+using DataStructures
+
+"Node representing a directory or file"
 mutable struct Node
-    name
-    parent
-    children
+    name::String
+    parent::Union{Node, Nothing}
     size::Int64
+    children::Vector{Node}
+
+    Node(name) = new(name, nothing, 0, [])
+    Node(name, parent) = new(name, parent, 0, [])
+    Node(name, parent, size) = new(name, parent, size, [])
 end
 
-function path(node)
-    if node == nothing
-        return ""
-    elseif node.name == "/"
-        return node.name
-    else
-        return path(node.parent) * "/" * node.name
-    end
-end
-
+"Is this node a directory?"
 function isdir(node::Node)
     node.size == 0
 end
 
+"Traverse all nodes"
+function traverse(node::Node)
+    nodes = [node]
+    for child in node.children
+        append!(nodes, traverse(child))
+    end
+    nodes
+end
+
+"Total size of the node"
 function size(node::Node)
     total = node.size
     for child in node.children
@@ -27,71 +35,71 @@ function size(node::Node)
     total
 end
 
-"Utility function to load stuff"
+"Utility function to load the op queue"
 function get_ops()
     root = dirname(dirname(@__FILE__))
     path = joinpath(root, "data", "day7.txt")
+    q = Queue{String}()
     open(path) do file
-        return readlines(file)
+        for op in readlines(file)
+            enqueue!(q, op)
+        end
     end
+    q
 end
 
-"Calculate the nodes"
-function calc_nodes()
-    nodes = Dict()
-    loc = nothing
+"Construct the tree"
+function construct_tree()
     ops = get_ops()
-    index = 1
-    while index <= length(ops)
-        op = ops[index]
+    root = Node("/")
+    cwd = root
+    op = dequeue!(ops)
 
+    while length(ops) > 0
+
+        # Deal with directory changes
         if startswith(op, "\$ cd")
             if op[end] == '/'
-                loc = Node("/", nothing, [], 0)
-                nodes[path(loc)] = loc
+                cwd = root
             elseif endswith(op, "..")
-                loc = nodes[path(loc.parent)]
+                cwd = cwd.parent
             else
                 name = split(op, " ")[end]
-                for child in loc.children
+                for child in cwd.children
                     if child.name == name
-                        loc = child
+                        cwd = child
                         break
                     end
                 end
             end
-            index += 1
+            op = dequeue!(ops)
 
+        # Deal with list dirs
         elseif startswith(op, "\$ ls")
-            index += 1
-            while index <= length(ops)
-                f = ops[index]
-                if startswith(f, "\$")
+            while length(ops) > 0
+                item = dequeue!(ops)
+                if startswith(item, "\$")
+                    op = item
                     break
                 end
 
-                size_, name = split(f, " ")
+                size_, name = split(item, " ")
                 size = (size_ == "dir") ? 0 : parse(Int64, size_)
-                node = Node(name, loc, [], size)
-                push!(loc.children, node)
-                nodes[path(node)] = node
-                index += 1
+                node = Node(name, cwd, size)
+                push!(cwd.children, node)
             end
         end
     end
-    nodes
+    root
 end
 
 "Part 1"
 function part1()
-    nodes = calc_nodes()
+    root = construct_tree()
     total = 0
-    for (_, node) in nodes
-        if !isdir(node)
-            continue
-        end
+    for node in traverse(root)
         s = size(node)
-        if s <= 100000
+        if isdir(node) && s <= 100_000
             total += s
         end
     end
@@ -100,15 +108,12 @@ end
 
 "Part 2"
 function part2()
-    nodes = calc_nodes()
-    required = 30000000 - (70000000 - size(nodes["/"]))
-    smallest = 100000000
-    for (_, node) in nodes
-        if !isdir(node)
-            continue
-        end
+    root = construct_tree()
+    required = 30_000_000 - (70_000_000 - size(root))
+    smallest = 100_000_000
+    for node in traverse(root)
         s = size(node)
-        if (s >= required) && (s < smallest)
+        if isdir(node) && (s >= required) && (s < smallest)
             smallest = s
         end
     end
