@@ -88,7 +88,6 @@ function part2()
             end
             push!(visited, tails[end])
         end
-        #show(head, tails)
     end
     num = length(visited)
     println("PART 2: $num")
