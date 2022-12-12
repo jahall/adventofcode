@@ -37,9 +37,8 @@ function neighbors(grid, point)
     return [((r, c), grid[r][c]) for (r, c) in neighbors]
 end
 
-"Part 1"
-function part1()
-    grid, start, target = get_grid()
+"Find shortest path"
+function find_shortest_path(grid, start, target)
     pq = PriorityQueue()
     visited = Set([start])
     enqueue!(pq, (start, 1, 0), 0)
@@ -56,12 +55,31 @@ function part1()
             end
         end
     end
+    path
+end
+
+"Part 1"
+function part1()
+    grid, start, target = get_grid()
+    path = find_shortest_path(grid, start, target)
     println("PART 1: $path")
 end
 
 "Part 2"
 function part2()
-    println("PART 2:")
+    grid, _, target = get_grid()
+    shortest = -1
+    for (i, row) in enumerate(grid)
+        for (j, h) in enumerate(row)
+            if h == 1
+                path = find_shortest_path(grid, (i, j), target)
+                if shortest == -1 || path < shortest
+                    shortest = path
+                end
+            end
+        end
+    end
+    println("PART 2: $shortest")
 end
 
 part1()
