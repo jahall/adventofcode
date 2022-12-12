@@ -53,5 +53,6 @@ function part2()
     println("PART 2: $total")
 end
 
+# <30 mins
 part1()
 part2()

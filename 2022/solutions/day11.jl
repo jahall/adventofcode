@@ -90,5 +90,6 @@ function part2()
     println("PART 2: $monkey_business_level")
 end
 
+# 50 mins
 part1()
 part2()

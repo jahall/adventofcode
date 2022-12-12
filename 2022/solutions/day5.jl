@@ -65,5 +65,6 @@ function part2()
     println("PART 2: $code")
 end
 
+# <30 mins
 part1()
 part2()

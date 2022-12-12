@@ -49,5 +49,6 @@ function part2()
     println()
 end
 
+# 30 mins
 part1()
 part2()

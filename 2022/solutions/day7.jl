@@ -120,5 +120,6 @@ function part2()
     println("PART 2: $smallest")
 end
 
+# 70 mins
 part1()
 part2()

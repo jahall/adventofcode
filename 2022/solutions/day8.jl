@@ -111,5 +111,6 @@ function part2()
     println("PART 2: $best")
 end
 
+# <30 mins
 part1()
 part2()

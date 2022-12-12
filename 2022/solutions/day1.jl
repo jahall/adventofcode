@@ -44,5 +44,6 @@ function part2()
     println("PART 2: $solution")
 end
 
+# <30 mins
 part1()
 part2()
