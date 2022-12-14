@@ -21,6 +21,30 @@ struct Rock
     )
 end
 
+"Utility function to load the stuff"
+function get_rocks()
+    root = dirname(dirname(@__FILE__))
+    path = joinpath(root, "data", "day14.txt")
+    rocks::Vector{Rock} = []
+    open(path) do file
+        for line in readlines(file)
+            rock = Rock(
+                [
+                    (parse(Int64, split(pair, ",")[1]), parse(Int64, split(pair, ",")[2]))
+                    for pair in split(line, " -> ")
+                ]
+            )
+            push!(rocks, rock)
+        end
+    end
+    rocks
+end
+
+"Get level of the floor."
+function floor(rocks::Vector{Rock})
+    max([rock.ymax for rock in rocks]...) + 2
+end
+
 "Is this grain of sand in the rock?"
 function in(rock::Rock, sand::Sand)
     if (sand.x < rock.xmin) || (sand.x > rock.xmax) || (sand.y < rock.ymin) || (sand.y > rock.ymax)
@@ -44,7 +68,7 @@ function in(rocks::Vector{Rock}, sand::Sand)
             return true
         end
     end
-    return false
+    return sand.y == floor(rocks)
 end
 
 "Is this grain of sand in the pile of sand?"
@@ -57,29 +81,9 @@ function in(pile::Vector{Sand}, sand::Sand)
     return false
 end
 
-"Utility function to load the stuff"
-function get_rocks()
-    root = dirname(dirname(@__FILE__))
-    path = joinpath(root, "data", "day14.txt")
-    rocks::Vector{Rock} = []
-    open(path) do file
-        for line in readlines(file)
-            rock = Rock(
-                [
-                    (parse(Int64, split(pair, ",")[1]), parse(Int64, split(pair, ",")[2]))
-                    for pair in split(line, " -> ")
-                ]
-            )
-            push!(rocks, rock)
-        end
-    end
-    rocks
-end
-
 "Simulate dropping a grain of sand."
 function pour_sand!(rocks::Vector{Rock}, pile::Vector{Sand})
     sand = Sand(500, 0)
-    ymax = max([rock.ymax for rock in rocks]...)
     while true
         come_to_rest = true
         for (xo, yo) in [(0, 1), (-1, 1), (1, 1)]
@@ -87,18 +91,41 @@ function pour_sand!(rocks::Vector{Rock}, pile::Vector{Sand})
             if !in(rocks, next) && !in(pile, next)
                 come_to_rest = false
                 sand = next
+                break
             end
         end
         if come_to_rest
             push!(pile, sand)
-            return true
-        end
-        if sand.y > ymax
-            # now below all rock formations
-            return false
+            return sand == Sand(500, 0)
         end
     end
 end
+
+"Pretty viz"
+function show(rocks::Vector{Rock}, pile::Vector{Sand})
+    xmin = min([rock.xmin for rock in rocks]...) - 5
+    xmax = max([rock.xmax for rock in rocks]...) + 5
+    ymax = max([rock.ymax for rock in rocks]...) + 2
+    for y = 1:ymax
+        println()
+        for x = xmin:xmax
+            p = Sand(x, y)
+            if p == Sand(500, 1)
+                print("x")
+            elseif in(rocks, p)
+                print("#")
+            elseif in(pile, p)
+                print("o")
+            else
+                print(".")
+            end
+        end
+    end
+    println()
+    println()
+end
+
+show(rocks::Vector{Rock}) = show(rocks, [])
 
 "Part 1"
 function part1()
@@ -106,18 +133,29 @@ function part1()
     pile::Vector{Sand} = []
     num_at_rest = 0
     while true
-        come_to_rest = pour_sand!(rocks, pile)
-        if !come_to_rest
+        pour_sand!(rocks, pile)
+        if pile[end].y == floor(rocks) - 1
             break
         end
         num_at_rest += 1
     end
+    show(rocks, pile)
     println("PART 1: $num_at_rest")
 end
 
 "Part 2"
 function part2()
-    println("PART 2:")
+    rocks = get_rocks()
+    pile::Vector{Sand} = []
+    num_at_rest = 0
+    while true
+        finished = pour_sand!(rocks, pile)
+        num_at_rest += 1
+        if finished
+            break
+        end
+    end
+    println("PART 2: $num_at_rest")
 end
 
 # x mins
