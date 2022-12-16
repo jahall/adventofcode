@@ -1,20 +1,35 @@
+using Combinatorics
+
 "Handy holder for network values"
 struct Network
     flow_rates::Dict{String, Int64}
     neighbours::Dict{String, Vector{String}}
-    num_non_zero::Int64
+    valves::Vector{String}
+    useful::Vector{String}
 
     Network(flow_rates, neighbours) = new(
         flow_rates,
         neighbours,
-        length(filter(x -> x > 0, [rate for (_, rate) in flow_rates])),
+        sort([name for (name, _) in flow_rates]),
+        sort([name for (name, rate) in flow_rates if rate > 0]),
     )
+end
+
+"Current state of the network"
+struct State
+    turned_on::Any
+    my_location::String
+    elephant_location::String
+
+    # assume the elephant stays put
+    State(turned_on, my_loc) = new(turned_on, my_loc, "AA")
+    State(turned_on, my_loc, elephant_loc) = new(turned_on, my_loc, elephant_loc)
 end
 
 "Utility function to load the network"
 function get_network()
     root = dirname(dirname(@__FILE__))
-    path = joinpath(root, "data", "day16_test.txt")
+    path = joinpath(root, "data", "day16.txt")
     flow_rates::Dict{String, Int64} = Dict()
     neighbours::Dict{String, Vector{String}} = Dict()
     open(path) do file
@@ -30,74 +45,132 @@ function get_network()
     Network(flow_rates, neighbours)
 end
 
-"Find optimal"
-function find_optimal(
-    network::Network,
-    location::String,
-    minute::Int64,
-    total_pressure::Int64,
-    pressure::Int64,
-    turned_on::Set{String},
-)
-    println(minute)
-    if minute == 11
-        return total_pressure
+"Initialize the value function for me only"
+function init_values_me_only(network::Network)
+    values = Dict{State, Int64}(
+        State(Tuple(subset), valve) => 0
+        for valve in network.valves
+        for subset in combinations(network.useful)
+    )
+    for valve in network.valves
+        values[State((), valve)] = 0
     end
-    # do nothing
-    optimal = total_pressure + pressure * (31 - minute)
-    if length(turned_on) == network.num_non_zero
-        return optimal
-    end
-    # turn this on if 
-    if !in(location, turned_on) && network.flow_rates[location] > 0
-        this_opt = find_optimal(
-            network,
-            location,
-            minute + 1,
-            total_pressure + pressure,
-            pressure + network.flow_rates[location],
-            union(turned_on, Set([location])),
-        )
-        if this_opt > optimal
-            optimal = this_opt
+    values
+end
+
+"Initialize the value function including the elephant"
+function init_values_with_elephant(network::Network)
+    values = Dict{State, Int64}(
+        State(Tuple(subset), my_valve, elephant_valve) => 0
+        for my_valve in network.valves
+        for elephant_valve in network.valves
+        for subset in combinations(network.useful)
+    )
+    for my_valve in network.valves
+        for elephant_valve in network.valves
+            values[State((), my_valve, elephant_valve)] = 0
         end
     end
-    # move to another node
-    for next in network.neighbours[location]
-        this_opt = find_optimal(
-            network,
-            location,
-            minute + 1,
-            total_pressure + pressure,
-            pressure,
-            turned_on,
-        )
-        if this_opt > optimal
-            optimal = this_opt
-        end
+    values
+end
+
+"Pre-calculate and store pressure increases"
+function calc_pressure_increases(network::Network)
+    increases = Dict{Any, Int64}(() => 0)
+    for subset in combinations(network.useful)
+        increases[Tuple(subset)] = sum(network.flow_rates[valve] for valve in subset)
     end
-    optimal
+    increases
 end
 
 "Part 1"
 function part1()
     network = get_network()
-    total_pressure = find_optimal(
-        network,
-        "AA",
-        1,
-        0,
-        0,
-        Set{String}(),
-    )
-    println("PART 1: $total_pressure")
+    values = init_values_me_only(network)
+    increases = calc_pressure_increases(network)
+    for iteration = 1:30
+        println(iteration)
+        next_values = copy(values)
+        for (state, _) in values
+            max_value = values[state]
+            # try turning this one on, if it has a flow
+            if !in(state.my_location, state.turned_on) && in(state.my_location, network.useful)
+                turned_on = Tuple(sort([state.turned_on..., state.my_location]))
+                max_value = max(max_value, values[State(turned_on, state.my_location)])
+            end
+            # try moving to a neighbour
+            for next in network.neighbours[state.my_location]
+                max_value = max(max_value, values[State(state.turned_on, next)])
+            end
+            # apply the current pressure increase
+            increase = increases[state.turned_on]
+            # update the values
+            next_values[state] = max_value + increase
+        end
+        values = next_values
+    end
+    val = values[State((), "AA")]
+    println("PART 1: $val")
 end
 
 "Part 2"
 function part2()
-    println("PART 2:")
+    network = get_network()
+    values = init_values_with_elephant(network)
+    increases = calc_pressure_increases(network)
+    for iteration = 1:26
+        println(iteration)
+        next_values = copy(values)
+        for (state, _) in values
+            max_value = values[state]
+            # try both of us turning one on (if we're in separate useful places)
+            if (
+                state.my_location != state.elephant_location &&
+                !in(state.my_location, state.turned_on) &&
+                in(state.my_location, network.useful) &&
+                !in(state.elephant_location, state.turned_on) &&
+                in(state.elephant_location, network.useful)
+            )
+                turned_on = Tuple(sort([state.turned_on..., state.my_location, state.elephant_location]))
+                max_value = max(max_value, values[State(turned_on, state.my_location, state.elephant_location)])
+            end
+            # try just me turning one on and the elephant moving
+            if (
+                !in(state.my_location, state.turned_on) &&
+                in(state.my_location, network.useful)
+            )
+                turned_on = Tuple(sort([state.turned_on..., state.my_location]))
+                for next in [network.neighbours[state.elephant_location]..., state.elephant_location]
+                    max_value = max(max_value, values[State(turned_on, state.my_location, next)])
+                end
+            end
+            # try the elephant turning one on and me moving
+            if (
+                !in(state.elephant_location, state.turned_on) &&
+                in(state.elephant_location, network.useful)
+            )
+                turned_on = Tuple(sort([state.turned_on..., state.elephant_location]))
+                for next in [network.neighbours[state.my_location]..., state.my_location]
+                    max_value = max(max_value, values[State(turned_on, next, state.elephant_location)])
+                end
+            end
+            # try both of us moving
+            for me_next in [network.neighbours[state.my_location]..., state.my_location]
+                for elephant_next in [network.neighbours[state.elephant_location]..., state.elephant_location]
+                    max_value = max(max_value, values[State(state.turned_on, me_next, elephant_next)])
+                end
+            end
+            # apply the current pressure increase
+            increase = increases[state.turned_on]
+            # update the values
+            next_values[state] = max_value + increase
+        end
+        values = next_values
+    end
+    val = values[State((), "AA", "AA")]
+    println("PART 2: $val")
 end
 
-# x hours
+# 3 hours
 part1()
 part2()
