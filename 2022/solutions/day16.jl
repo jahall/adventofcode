@@ -96,9 +96,10 @@ end
 "Part 2"
 function part2()
     network = get_network()
+    # do same as part one but split each permutation between me and elephant
     println("PART 2:")
 end
 
-# 3 hours
+# 1 hour to code (after some inspiration) ...but still too slow even for part 1!
 part1()
-#part2()
+part2()
