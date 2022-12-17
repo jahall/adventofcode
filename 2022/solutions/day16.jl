@@ -84,7 +84,7 @@ end
 function part1()
     network = get_network()
     best = 0
-    for combo in permutations(network.useful_valves)
+    for combo in permutations(network.useful_valves, length(network.useful_valves))
         pressure = calc_total_pressure(network, combo, 30)
         if pressure > best
             best = pressure

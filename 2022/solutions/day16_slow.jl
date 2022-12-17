@@ -171,6 +171,6 @@ function part2()
     println("PART 2: $val")
 end
 
-# 3 hours
+# 3 hours to code
 part1()
-part2()
+part2()  # ...around 18 hours to run!
