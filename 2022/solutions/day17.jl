@@ -6,15 +6,16 @@ end
 
 "Struct for a rock structure."
 struct Rock
+    shape::Char
     points::Set{Point}
     xmin::Int64
     ymin::Int64
     xmax::Int64
     ymax::Int64
 
-    function Rock(points::Set{Point})
-        #println([p.x for p in points], [p.y for p in points])
+    function Rock(shape::Char, points::Set{Point})
         new(
+            shape,
             points,
             min([p.x for p in points]...),
             min([p.y for p in points]...),
@@ -52,24 +53,22 @@ struct Rock
             ]
         end
         # can't do `new` or we end up with random xmin, xmax, etc!!
-        Rock(Set(points))
+        Rock(shape, Set(points))
     end
 end
 
 "Tower is a stack of rocks"
-mutable struct Tower
+struct Tower
     points::Set{Point}
-    height::Int64
+    rocks::Vector{Rock}
 
-    Tower() = new(Set{Point}(), 0)
+    Tower() = new(Set{Point}(), Vector{Rock}())
 end
 
-"Add a rock to the tower, and update its height"
-function add(rock::Rock, tower::Tower)
+"Add a rock to the tower"
+function add!(tower::Tower, rock::Rock)
     union!(tower.points, rock.points)
-    if rock.ymax > tower.height
-        tower.height = rock.ymax
-    end
+    push!(tower.rocks, rock)
 end
 
 "Does a rock overlap with another rock"
@@ -89,7 +88,7 @@ function move(rock::Rock, direction::Char, left_wall::Int64, right_wall::Int64)
         (direction == '>' && rock.xmax < right_wall - 1) ||
         (direction == 'v')
     )
-        rock = Rock(Set(move(point, direction) for point in rock.points))
+        rock = Rock(rock.shape, Set(move(point, direction) for point in rock.points))
     end
     rock
 end
@@ -127,13 +126,32 @@ function next(movements::String, index::Int64)
     next_index, movements[next_index]
 end
 
+"Pattern covers all horizontal space"
+function covers_all_horizontal_space(rocks::Vector{Rock})
+    length(Set(x for r in rocks for x = r.xmin:r.xmax)) == 7
+end
+
+"Calculate height of a pile of rocks"
+function calc_height(rocks)
+    max([r.ymax for r in rocks]...) - min([r.ymin for r in rocks]...) + 1
+end
+
 "Build a tower for a certain number of iterations"
-function build_tower(iterations::Int64)
+function calc_tower_height(iterations::Int64)
     tower = Tower()
-    movements = get_movements()
-    movement_index = 0
+    height = 0
+    movement_index, movements = 0, get_movements()
+
+    repeating::Vector{Rock} = []
+    repeat_overlap = 0
+    completed = 0
+
+    # 1. Simulate rocks falling until we identify a repeated pattern
     for num = 1:iterations
-        rock = next_rock(num, tower.height)
+
+        # a. move the rock into place
+        rock = next_rock(num, height)
+        start_index = movement_index 
         while true
             # move left or right (if possible)
             movement_index, movement = next(movements, movement_index)
@@ -146,18 +164,74 @@ function build_tower(iterations::Int64)
             if !overlaps(next_rock, tower) && next_rock.ymin > 0
                 rock = next_rock
             else
-                add(rock, tower)
+                add!(tower, rock)
+                height = max(height, rock.ymax)
+                break
+            end
+        end
+        completed += 1
+        
+        # b. try and find repeating pattern each time we wrap around
+        if movement_index < start_index
+            n = length(tower.rocks)
+            found_match = false
+            for size = 5:5:div(n, 2)
+                prev = view(tower.rocks, n - 2 * size + 1:n - size)
+                curr = view(tower.rocks, n - size + 1:n)
+                if patterns_match(prev, curr)
+                    found_match = true
+                    repeating = [rock for rock in curr]
+                    # there may be some overlap in how the ends of the pattern slot together
+                    repeat_overlap = max([r.ymax for r in prev]...) - min([r.ymin for r in curr]...) + 1
+                    n_repeating = length(repeating)
+                    println("Found repeating pattern of size $n_repeating")
+                    break
+                end
+            end
+            if found_match
                 break
             end
         end
     end
-    tower
+
+    # 2. Extrapolate out based on repeating pattern
+    remaining = iterations - completed
+    if remaining > 0
+        n_repeating = length(repeating)
+        (n_repeats, leftover) = divrem(remaining, n_repeating)
+
+        # a. add on the full number of patterns that fit
+        repeat_height = calc_height(repeating)
+        height += n_repeats * (repeat_height - repeat_overlap)
+
+        # b. then handle anything leftover
+        if leftover > 0
+            leftover_height = calc_height(view(repeating, 1:leftover))
+            height += max(leftover_height - repeat_overlap, 0)
+        end
+    end
+
+    height
+end
+
+"Check if two rock patterns match"
+function patterns_match(prev, next)
+    if length(prev) != length(next)
+        return false
+    end
+    offset = next[1].ymin - prev[1].ymin
+    for (r1, r2) in zip(prev, next)
+        if r1.shape != r2.shape || r1.xmin != r2.xmin || r1.ymin != r2.ymin - offset
+            return false
+        end
+    end
+    true
 end
 
 "Nice utility to show current status"
 function show(tower::Tower, rock::Rock)
     println()
-    for y in max(tower.height, rock.ymax) + 1:-1:1
+    for y in max([point.y for point in tower.points]..., rock.ymax) + 1:-1:1
         print("|")
         for x in 1:7
             p = Point(x, y)
@@ -171,18 +245,16 @@ end
 
 "Part 1"
 function part1()
-    tower = build_tower(2022)
-    height = tower.height
+    height = calc_tower_height(2022)
     println("PART 1: $height")
 end
 
 "Part 2"
 function part2()
-    tower = build_tower(1_000_000_000_000)
-    height = tower.height
+    height = calc_tower_height(1_000_000_000_000)
     println("PART 2: $height")
 end
 
-# 2 hours for part 1
+# 5 hours (2 for part 1 and 3 for part 2)
 part1()
-#part2()
+part2()
