@@ -76,11 +76,16 @@ now_string() = Dates.format(now(), "YYYY-mm-dd HH:MM:SS")
 
 "Calculate quality of a blueprint"
 function calc_quality(blueprint::Blueprint, remaining_minutes::Int64)
+    blueprint.id * calc_max_geodes(blueprint, remaining_minutes)
+end
+
+"Calculate max geodes possible following a given blueprint"
+function calc_max_geodes(blueprint::Blueprint, remaining_minutes::Int64)
     print(now_string(), " Quality of blueprint ", blueprint.id, " is ... ")
     resources = Resources(0, 0, 0, 0)
     robots = Resources(1, 0, 0, 0)
     cache = Dict{State, Int64}()
-    quality = calc_quality(
+    quality = calc_max_geodes(
         blueprint,
         resources,
         robots,
@@ -92,7 +97,7 @@ function calc_quality(blueprint::Blueprint, remaining_minutes::Int64)
     quality
 end
 
-function calc_quality(
+function calc_max_geodes(
     blueprint::Blueprint,
     resources::Resources,
     robots::Resources,
@@ -120,7 +125,7 @@ function calc_quality(
 
     # 4. do nothing
     next_resources = add(resources, robots)
-    max_quality = calc_quality(
+    max_quality = calc_max_geodes(
         blueprint,
         next_resources,
         robots,
@@ -137,7 +142,7 @@ function calc_quality(
         (Resources(0, 0, 0, 1), blueprint.geode_price),
     ]
         if gte(resources, price)
-            quality = calc_quality(
+            quality = calc_max_geodes(
                 blueprint,
                 subtract(next_resources, price),
                 add(robots, new_robot),
@@ -156,13 +161,15 @@ end
 
 "Part 1"
 function part1()
-    total_quality = sum(b.id * calc_quality(b, 24) for b in get_blueprints())
+    total_quality = sum(calc_quality(b, 24) for b in get_blueprints())
     println(now_string(), " PART 1: $total_quality")
 end
 
 "Part 2"
 function part2()
-    println(now_string(), " PART 2:")
+    b1, b2, b3 = view(get_blueprints(), 1:3)
+    answer = calc_max_geodes(b1, 32) * calc_max_geodes(b2, 32) * calc_max_geodes(b3, 32)
+    println(now_string(), " PART 2: $answer")
 end
 
 # 1.5 hours for part 1
