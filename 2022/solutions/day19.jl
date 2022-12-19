@@ -81,7 +81,7 @@ end
 
 "Calculate max geodes possible following a given blueprint"
 function calc_max_geodes(blueprint::Blueprint, remaining_minutes::Int64)
-    print(now_string(), " Quality of blueprint ", blueprint.id, " is ... ")
+    print(now_string(), " Max geodes for blueprint ", blueprint.id, " is ... ")
     resources = Resources(0, 0, 0, 0)
     robots = Resources(1, 0, 0, 0)
     cache = Dict{State, Int64}()
@@ -116,16 +116,22 @@ function calc_max_geodes(
         return cache[key]
     end
 
-    # 3. check best case scenario, if its not good enough, give up!
-    max_possible = resources.geodes + sum(robots.geodes + i for i = 0:remaining_minutes - 1)
-    if max_possible <= current_max
+    # 3. calc upper bound on max geodes (i.e. all non-geode resources can go
+    # into paying for a geode robot), if that's not good enough, give up!
+    upper_bound = calc_max_geodes_upper_bound(
+        blueprint,
+        resources,
+        robots,
+        remaining_minutes,
+    )
+    if upper_bound <= current_max
         cache[key] = 0
         return 0
     end
 
     # 4. do nothing
     next_resources = add(resources, robots)
-    max_quality = calc_max_geodes(
+    max_geodes = calc_max_geodes(
         blueprint,
         next_resources,
         robots,
@@ -142,21 +148,45 @@ function calc_max_geodes(
         (Resources(0, 0, 0, 1), blueprint.geode_price),
     ]
         if gte(resources, price)
-            quality = calc_max_geodes(
+            n_geodes = calc_max_geodes(
                 blueprint,
                 subtract(next_resources, price),
                 add(robots, new_robot),
                 remaining_minutes - 1,
-                max(max_quality, current_max),
+                max(max_geodes, current_max),
                 cache,
             )
-            max_quality = max(max_quality, quality)
+            max_geodes = max(max_geodes, n_geodes)
         end
     end
 
     # 6. update cache
-    cache[key] = max_quality
-    max_quality
+    cache[key] = max_geodes
+    max_geodes
+end
+
+"Calc upper bound on number of geodes"
+function calc_max_geodes_upper_bound(
+    blueprint::Blueprint,
+    resources::Resources,
+    robots::Resources,
+    remaining_minutes::Int64,
+)
+    upper_bound = resources.geodes + robots.geodes * remaining_minutes
+    # get total non-geode resources and robots
+    n_resources = resources.ores + resources.clays + resources.obsidians
+    n_robots = robots.ores + robots.clays + robots.obsidians
+    # get a flat price for a geode (we know its only ores and obsidians)
+    geode_cost = blueprint.geode_price.ores + blueprint.geode_price.obsidians
+    for remaining = remaining_minutes - 1:-1:0
+        n_resources += n_robots + remaining
+        # assume we can buy a geode robot with any combination of resources
+        if n_resources >= geode_cost
+            n_resources -= geode_cost
+            upper_bound += remaining
+        end
+    end
+    upper_bound
 end
 
 "Part 1"
@@ -172,6 +202,6 @@ function part2()
     println(now_string(), " PART 2: $answer")
 end
 
-# 1.5 hours for part 1
+# 1.5 hours for part 1, 1.5 hours for part 2
 part1()
-part2()
+part2()  # take about 3 mins to run
