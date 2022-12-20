@@ -14,7 +14,7 @@ function get_data()
 end
 
 "Unmix the sequence"
-function unmix(seq::Vector{Int64}, decryption_key::Int64, cycles::Int64)
+function unmix(seq::Vector{Int64}; decryption_key::Int64=1, cycles::Int64=1)
     # perform the unmixing operations
     raw = [Item(i, val * decryption_key) for (i, val) in enumerate(seq)]
     mix = copy(raw)
@@ -27,11 +27,6 @@ function unmix(seq::Vector{Int64}, decryption_key::Int64, cycles::Int64)
     mix = [item.value for item in mix]
     # put the zero at the start
     put_zero_at_start(mix)
-end
-
-"Unmix the sequence...without the decryption_key and only once"
-function unmix(seq::Vector{Int64})
-    unmix(seq, 1, 1)
 end
 
 "Fetch value at a particular index after 0"
@@ -73,7 +68,7 @@ end
 
 "Part 2"
 function part2()
-    unmixed = unmix(get_data(), 811589153, 10)
+    unmixed = unmix(get_data(), decryption_key=811589153, cycles=10)
     answer = sum(fetch(unmixed, i) for i in (1000, 2000, 3000))
     println("PART 2: $answer")
 end
