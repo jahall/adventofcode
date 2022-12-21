@@ -1,3 +1,5 @@
+import Base: +, -, *, ÷
+
 "Utility function to load the monkey operations"
 function get_ops()
     root = dirname(dirname(@__FILE__))
@@ -13,11 +15,7 @@ function get_ops()
 end
 
 "Evalulate a particular node"
-function eval(
-    ops,
-    monkey::String;
-    cache=Dict(),
-)
+function eval(ops, monkey::String; cache=Dict())
     if haskey(cache, monkey)
         return cache[monkey]
     end
@@ -28,14 +26,14 @@ function eval(
         left, op, right = op
         left = eval(ops, left, cache=cache)
         right = eval(ops, right, cache=cache)
-        if op == "*"
-            cache[monkey] = left * right
-        elseif op == "+"
+        if op == "+"
             cache[monkey] = left + right
-        elseif op == "/"
-            cache[monkey] = left ÷ right
         elseif op == "-"
             cache[monkey] = left - right
+        elseif op == "*"
+            cache[monkey] = left * right
+        elseif op == "/"
+            cache[monkey] = left ÷ right
         end
     end
     cache[monkey]    
@@ -46,12 +44,13 @@ struct Polynomial
     coeffs::Vector{Int64}
 end
 
+"Get coefficient at index ...or zero if doesn't exist"
 function get(poly::Polynomial, index::Int64)
     index > length(poly.coeffs) ? 0 : poly.coeffs[index]
 end
 
 "Add two polynomials together"
-function add(p1::Polynomial, p2::Polynomial)
+function (+)(p1::Polynomial, p2::Polynomial)
     coeffs::Vector{Int64} = []
     for i = 1:max(length(p1.coeffs), length(p2.coeffs))
         push!(coeffs, get(p1, i) + get(p2, i))
@@ -60,7 +59,7 @@ function add(p1::Polynomial, p2::Polynomial)
 end
 
 "Subtract one polynomial from another"
-function sub(p1::Polynomial, p2::Polynomial)
+function (-)(p1::Polynomial, p2::Polynomial)
     coeffs::Vector{Int64} = []
     for i = 1:max(length(p1.coeffs), length(p2.coeffs))
         push!(coeffs, get(p1, i) - get(p2, i))
@@ -69,7 +68,7 @@ function sub(p1::Polynomial, p2::Polynomial)
 end
 
 "Multiply two polynomials together"
-function mul(p1::Polynomial, p2::Polynomial)
+function (*)(p1::Polynomial, p2::Polynomial)
     coeffs::Vector{Int64} = []
     for (c1_deg, c1) in enumerate(p1.coeffs)
         for (c2_deg, c2) in enumerate(p2.coeffs)
@@ -84,7 +83,7 @@ function mul(p1::Polynomial, p2::Polynomial)
 end
 
 "Divide a polynomial by a scalar"
-function div(p::Polynomial, divisor::Int64)
+function (÷)(p::Polynomial, divisor::Int64)
     Polynomial([c ÷ divisor for c in p.coeffs])
 end
 
@@ -100,44 +99,32 @@ struct Value
     "Get rid of any common divisors"
     function Value(num::Polynomial, den::Polynomial)
         common = gcd(num.coeffs..., den.coeffs...)
-        new(div(num, common), div(den, common))
+        new(num ÷ common, den ÷ common)
     end
 end
 
-"Add two values together"
-function add(v1::Value, v2::Value)
-    num = add(mul(v1.num, v2.den), mul(v2.num, v1.den))
-    den = mul(v1.den, v2.den)
-    Value(num, den)
-end
-
-"Subtract two values"
-function sub(v1::Value, v2::Value)
-    num = sub(mul(v1.num, v2.den), mul(v2.num, v1.den))
-    den = mul(v1.den, v2.den)
-    Value(num, den)
-end
-
 "Multiply two values"
-function mul(v1::Value, v2::Value)
-    num = mul(v1.num, v2.num)
-    den = mul(v1.den, v2.den)
-    Value(num, den)
+function (*)(v1::Value, v2::Value)
+    Value(v1.num * v2.num, v1.den * v2.den)
 end
 
 "Divide two values"
-function div(v1::Value, v2::Value)
-    num = mul(v1.num, v2.den)
-    den = mul(v1.den, v2.num)
-    Value(num, den)
+function (÷)(v1::Value, v2::Value)
+    Value(v1.num * v2.den, v1.den * v2.num)
+end
+
+"Add two values together"
+function (+)(v1::Value, v2::Value)
+    Value((v1.num * v2.den) + (v2.num * v1.den), v1.den * v2.den)
+end
+
+"Subtract two values"
+function (-)(v1::Value, v2::Value)
+    Value((v1.num * v2.den) - (v2.num * v1.den), v1.den * v2.den)
 end
 
 "Evalulate a particular node...using polynomials based on the value of humn"
-function eval_humn(
-    ops,
-    monkey::String;
-    cache=Dict(),
-)
+function eval_humn(ops, monkey::String; cache=Dict())
     if haskey(cache, monkey)
         return cache[monkey]
     end
@@ -150,14 +137,14 @@ function eval_humn(
         left, op, right = op
         left = eval_humn(ops, left, cache=cache)
         right = eval_humn(ops, right, cache=cache)
-        if op == "*"
-            cache[monkey] = mul(left, right)
-        elseif op == "+"
-            cache[monkey] = add(left, right)
-        elseif op == "/"
-            cache[monkey] = div(left, right)
+        if op == "+"
+            cache[monkey] = left + right
         elseif op == "-"
-            cache[monkey] = sub(left, right)
+            cache[monkey] = left - right
+        elseif op == "*"
+            cache[monkey] = left * right
+        elseif op == "/"
+            cache[monkey] = left ÷ right
         end
     end
     cache[monkey]    
@@ -177,7 +164,7 @@ function part2()
     left = eval_humn(ops, left)
     right = eval_humn(ops, right)
     # assumes that final numerator is linear
-    n_humn, n = sub(left, right).num.coeffs
+    n_humn, n = (left - right).num.coeffs
     result = n_humn ÷ (-n)
     println("PART 2: $result")
 end
