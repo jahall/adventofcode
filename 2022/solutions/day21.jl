@@ -14,31 +14,6 @@ function get_ops()
     ops
 end
 
-"Evalulate a particular node"
-function eval(ops, monkey::String; cache=Dict())
-    if haskey(cache, monkey)
-        return cache[monkey]
-    end
-    op = ops[monkey]
-    if length(op) == 1
-        cache[monkey] = parse(Int64, op[1])
-    else
-        left, op, right = op
-        left = eval(ops, left, cache=cache)
-        right = eval(ops, right, cache=cache)
-        if op == "+"
-            cache[monkey] = left + right
-        elseif op == "-"
-            cache[monkey] = left - right
-        elseif op == "*"
-            cache[monkey] = left * right
-        elseif op == "/"
-            cache[monkey] = left ÷ right
-        end
-    end
-    cache[monkey]    
-end
-
 "A polynomial"
 struct Polynomial
     coeffs::Vector{Int64}
@@ -123,20 +98,18 @@ function (-)(v1::Value, v2::Value)
     Value((v1.num * v2.den) - (v2.num * v1.den), v1.den * v2.den)
 end
 
-"Evalulate a particular node...using polynomials based on the value of humn"
-function eval_humn(ops, monkey::String; cache=Dict())
+"Evalulate a particular node"
+function eval(ops, monkey::String; cache=Dict())
     if haskey(cache, monkey)
         return cache[monkey]
     end
     op = ops[monkey]
-    if monkey == "humn"
-        cache[monkey] = Value([0, 1])
-    elseif length(op) == 1
+    if length(op) == 1
         cache[monkey] = Value([parse(Int64, op[1])])
     else
         left, op, right = op
-        left = eval_humn(ops, left, cache=cache)
-        right = eval_humn(ops, right, cache=cache)
+        left = eval(ops, left, cache=cache)
+        right = eval(ops, right, cache=cache)
         if op == "+"
             cache[monkey] = left + right
         elseif op == "-"
@@ -153,7 +126,7 @@ end
 "Part 1"
 function part1()
     ops = get_ops()
-    root = eval(ops, "root")
+    root = eval(ops, "root").num.coeffs[1]
     println("PART 1: $root")
 end
 
@@ -161,8 +134,8 @@ end
 function part2()
     ops = get_ops()
     left, _, right = ops["root"]
-    left = eval_humn(ops, left)
-    right = eval_humn(ops, right)
+    left = eval(ops, left, cache=Dict(["humn" => Value([0, 1])]))
+    right = eval(ops, right, cache=Dict(["humn" => Value([0, 1])]))
     # assumes that final numerator is linear
     n_humn, n = (left - right).num.coeffs
     result = n_humn ÷ (-n)
