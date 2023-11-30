@@ -1,7 +1,3 @@
-# Ignore rust stuff
-*.exe
-*.pdb
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
