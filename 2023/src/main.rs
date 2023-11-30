@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::path;
 
 mod day1;
 
@@ -20,12 +21,21 @@ struct Data {
 
 impl Data {
     fn new(args: &[String]) -> Data {
-        let day = args[1].trim();
-        let path = format!(
-            "/Users/Joe/src/adventofcode/2023/data/day{day}.txt");
+        // Absolutely hideous way of getting the relative path to the data dir!!
+        let this_file = file!();
+        let abspath = fs::canonicalize(&this_file).expect("Oops");
+        let root_dir = abspath.parent()
+            .expect("Oops")
+            .parent()
+            .expect("Oops");
+        let data_dir = root_dir.join(path::Path::new("data"));
 
-        let error_msg = format!("Cannot find {path}");
-        let content = fs::read_to_string(path).expect(&error_msg);
+        let day = args[1].trim();
+        let filename = format!("day{day}.txt");
+        let filepath = data_dir.join(path::Path::new(&filename));
+
+        let error_msg = format!("Can't find file!");
+        let content = fs::read_to_string(filepath).expect(&error_msg);
         Data { day: day.to_string(), content }
     }
 }
