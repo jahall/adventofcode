@@ -8,7 +8,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let data: Data = Data::new(&args);
     
-    if data.day == "1" {
+    if data.day.starts_with("1") {
         day1::run(data.content);
     }
 }
