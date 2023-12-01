@@ -45,10 +45,7 @@ impl Data {
         // Absolutely hideous way of getting the relative path to the data dir!!
         let this_file = file!();
         let abspath = fs::canonicalize(&this_file).expect("Oops");
-        let root_dir = abspath.parent()
-            .expect("Oops")
-            .parent()
-            .expect("Oops");
+        let root_dir = abspath.parent().unwrap().parent().unwrap();
         let data_dir = root_dir.join(path::Path::new("data"));
 
         let suffix = args[1].trim();
