@@ -4,11 +4,11 @@ pub fn run(content: String) {
 }
 
 
-fn part1(content: &String) {
+fn part1(_content: &String) {
     println!("PART 1: {}", -1);
 }
 
 
-fn part2(content: &String) {
+fn part2(_content: &String) {
     println!("PART 2: {}", -1);
 }
