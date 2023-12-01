@@ -16,7 +16,7 @@ fn part1(content: &String) {
         if digits.len() == 0 {
             continue;
         }
-        let num: u32 = digits.first().unwrap() + digits.last().unwrap();
+        let num: u32 = 10 * digits.first().unwrap() + digits.last().unwrap();
         total += num;
     }
     println!("PART 1: {}", total);
