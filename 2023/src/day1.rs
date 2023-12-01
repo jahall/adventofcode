@@ -8,9 +8,15 @@ fn part1(content: &String) {
     let parts = content.split("\n").map(|line| line.trim());
     let mut total: u32 = 0;
     for part in parts {
-        let digit: String = part.chars().filter(|c| c.is_digit(10)).collect();
-        let twodig: String = digit[0..1].to_owned() + &digit[digit.len()-1..digit.len()];
-        let num: u32 = twodig.parse().expect("No");
+        let digits: Vec<u32> =
+            part.chars()
+            .filter(|c| c.is_digit(10))
+            .map(|c| c.to_digit(10).unwrap())
+            .collect();
+        if digits.len() == 0 {
+            continue;
+        }
+        let num: u32 = digits.first().unwrap() + digits.last().unwrap();
         total += num;
     }
     println!("PART 1: {}", total);
@@ -20,8 +26,6 @@ fn part1(content: &String) {
 fn part2(content: &String) {
     let parts = content.split("\n").map(|line| line.trim());
     let mut total: i32 = 0;
-
-    
 
     for part in parts {
         let mut start = -1;
