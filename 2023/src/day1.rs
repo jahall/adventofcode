@@ -1,3 +1,5 @@
+// maybe 40 mins, can't remember?
+
 pub fn run(content: String) {
     part1(&content);
     part2(&content);
