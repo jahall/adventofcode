@@ -1,6 +1,4 @@
 // 40 mins for part 1 ...then an hour to figure out how to go beyond f64 for part 2!
-use std::ops::{Mul, Div};
-
 use rug::{Float, Integer};
 
 
@@ -42,14 +40,13 @@ fn find_ways_to_beat(time: &i64, record: &i64) -> Integer {
 
 
 fn solve_quadratic(a: Float, b: Float, c: Float) -> (Float, Float) {
-    let four = Float::with_val(128, 4.0);
     let b_ = b.clone();
-    let s: Float = (b_.mul(&b) - four.mul(&a).mul(&c)).sqrt();
+    let s: Float = (b_ * &b - Float::with_val(128, 4.0) * &a * &c).sqrt();
     let den: Float = Float::with_val(128, 2.0) * &a;
 
     let b_ = b.clone();
-    let lower = (-b_ - &s).div(&den);
-    let upper = (-b + &s).div(&den);
+    let lower = (-b_ - &s) / &den;
+    let upper = (-b + &s) / &den;
     (lower, upper)
 }
 
