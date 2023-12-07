@@ -69,11 +69,9 @@ impl Hand {
             return 6;  // can make 5 of a kind
         } else if *vals[0] + nj == 4 {
             return 5;  // can make 4 of a kind
-        } else if (nj == 1) & (vals == vec![&2, &2]) {
+        } else if vals == vec![&2, &2] {
             return 4;  // can make full house
-        } else if (nj == 1) & (vals == vec![&2, &1, &1]) {
-            return 3;  // can make 3 of a kind
-        } else if (nj == 2) & (vals == vec![&1, &1, &1]) {
+        } else if (vals == vec![&2, &1, &1]) | (vals == vec![&1, &1, &1]) {
             return 3;  // can make 3 of a kind
         } else {
             return 1;  // can always make a pair
