@@ -11,22 +11,14 @@ pub fn run(content: String) {
 fn part1(content: &str) {
     let mut hands = to_hands(content);
     hands.sort_by_cached_key(|x| x.0.sort_key());
-    let winnings: usize = hands.iter()
-        .enumerate()
-        .map(|x| (x.0 + 1) * x.1.1)
-        .sum();
-    println!("PART 1: {}", winnings);
+    println!("PART 1: {}", calc_winnings(hands));
 }
 
 
 fn part2(content: &str) {
     let mut hands = to_hands(content);
     hands.sort_by_cached_key(|x| x.0.joker_sort_key());
-    let winnings: usize = hands.iter()
-        .enumerate()
-        .map(|x| (x.0 + 1) * x.1.1)
-        .sum();
-    println!("PART 2: {}", winnings);
+    println!("PART 2: {}", calc_winnings(hands));
 }
 
 
@@ -125,6 +117,14 @@ impl Hand {
             .collect();
         (score, v[0], v[1], v[2], v[3], v[4])
     }
+}
+
+
+fn calc_winnings(hands: Vec<(Hand, usize)>) -> usize {
+    hands.iter()
+        .enumerate()
+        .map(|x| (x.0 + 1) * x.1.1)
+        .sum()
 }
 
 
