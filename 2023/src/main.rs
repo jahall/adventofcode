@@ -10,6 +10,7 @@ mod day5;
 mod day6;
 mod day7;
 mod day8;
+mod day9;
 pub mod utils;
 
 
@@ -33,6 +34,8 @@ fn main() {
         day7::run(data.content);
     } else if (data.suffix == "8") | (data.suffix.starts_with("8_")) {
         day8::run(data.content);
+    } else if (data.suffix == "9") | (data.suffix.starts_with("9_")) {
+        day9::run(data.content);
     }
 }
 
