@@ -11,6 +11,16 @@ mod day6;
 mod day7;
 mod day8;
 mod day9;
+mod day10;
+mod day11;
+mod day12;
+mod day13;
+mod day14;
+mod day15;
+mod day16;
+mod day17;
+mod day18;
+mod day19;
 pub mod utils;
 
 
@@ -36,6 +46,26 @@ fn main() {
         day8::run(data.content);
     } else if (data.suffix == "9") | (data.suffix.starts_with("9_")) {
         day9::run(data.content);
+    } else if (data.suffix == "10") | (data.suffix.starts_with("10_")) {
+        day10::run(data.content);
+    } else if (data.suffix == "11") | (data.suffix.starts_with("11_")) {
+        day11::run(data.content);
+    } else if (data.suffix == "12") | (data.suffix.starts_with("12_")) {
+        day12::run(data.content);
+    } else if (data.suffix == "13") | (data.suffix.starts_with("13_")) {
+        day13::run(data.content);
+    } else if (data.suffix == "14") | (data.suffix.starts_with("14_")) {
+        day14::run(data.content);
+    } else if (data.suffix == "15") | (data.suffix.starts_with("15_")) {
+        day15::run(data.content);
+    } else if (data.suffix == "16") | (data.suffix.starts_with("16_")) {
+        day16::run(data.content);
+    } else if (data.suffix == "17") | (data.suffix.starts_with("17_")) {
+        day17::run(data.content);
+    } else if (data.suffix == "18") | (data.suffix.starts_with("18_")) {
+        day18::run(data.content);
+    } else if (data.suffix == "19") | (data.suffix.starts_with("19_")) {
+        day19::run(data.content);
     }
 }
 
