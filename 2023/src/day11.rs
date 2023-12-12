@@ -5,18 +5,8 @@ use std::collections::HashSet;
 use crate::utils::{Grid, Point};
 
 pub fn run(content: String) {
-    part1(&content);
-    part2(&content);
-}
-
-
-fn part1(content: &str) {
-    println!("PART 1: {}", solve(content, 2));
-}
-
-
-fn part2(content: &str) {
-    println!("PART 2: {}", solve(content, 1000000));
+    println!("PART 1: {}", solve(&content, 2));
+    println!("PART 2: {}", solve(&content, 1000000));
 }
 
 
