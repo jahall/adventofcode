@@ -1,4 +1,6 @@
-use std::collections::HashSet;
+// wow...so long, first went with combinations, then recursion...then finally figured out caching!
+
+use std::collections::{HashSet, HashMap};
 use itertools::Itertools;
 
 
@@ -25,12 +27,7 @@ fn part2(content: &str) {
 
 fn solve(records: &[Record]) -> usize {
     records.iter()
-        .enumerate()
-        .map(|x| {
-            let egg = x.1.arrangements();
-            println!("{} {}", x.0, egg);
-            egg
-        })
+        .map(|r| r.arrangements())
         .sum()
 }
 
@@ -53,7 +50,7 @@ impl Record {
     fn unfold(&self) -> Record {
         let mut springs: Vec<char> = vec![];
         let mut groups: Vec<usize> = vec![];
-        for i in 0..3 {
+        for i in 0..5 {
             springs.extend(&self.springs);
             groups.extend(&self.groups);
             if i < 4 { springs.push('?') }
@@ -62,10 +59,16 @@ impl Record {
     }
 
     fn arrangements(&self) -> usize {
-        self.find_arrangements(&self.springs, &self.groups)
+        let mut cache = HashMap::new();
+        self.find_arrangements(&self.springs, &self.groups, &mut cache)
     }
 
-    fn find_arrangements(&self, springs: &[char], groups: &[usize]) -> usize {
+    fn find_arrangements(&self, springs: &[char], groups: &[usize], cache: &mut HashMap<String, usize>) -> usize {
+        // first check the cache!!
+        let key = self.to_key(springs, groups);
+        if cache.contains_key(&key) {
+            return cache[&key];
+        }
         // if no further groups, must be no further known damaged
         if groups.is_empty() {
             return if self.any_known(springs, '#') { 0 } else { 1 };
@@ -94,7 +97,11 @@ impl Record {
                     // handle remaining groups
                     else if springs.len() > i + group + 1 {
                         if springs[i + group] != '#' {
-                            counts += self.find_arrangements(&springs[i + group + 1..], &groups[1..])
+                            counts += self.find_arrangements(
+                                &springs[i + group + 1..], 
+                                &groups[1..],
+                                cache,
+                            )
                         }
                     }
                 }
@@ -104,11 +111,19 @@ impl Record {
                 }
             }
         }
+        cache.insert(key, counts);
         counts
     }
 
     fn any_known(&self, springs: &[char], type_: char) -> bool {
         springs.iter().any(|&c| c == type_)
+    }
+
+    fn to_key(&self, springs: &[char], groups: &[usize]) -> String {
+        let mut key = springs.iter().join("");
+        let groups = groups.iter().map(|i| i.to_string()).join(",");
+        key.push_str(&groups);
+        key
     }
 
     // SLOW CODE I STARTED WITH
