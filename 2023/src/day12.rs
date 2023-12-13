@@ -10,7 +10,7 @@ pub fn run(content: String) {
 
 fn part1(content: &str) {
     let records = to_records(content);
-    println!("PART 1: {}", solve(records));
+    println!("PART 1: {}", solve(&records));
 }
 
 
@@ -19,13 +19,18 @@ fn part2(content: &str) {
         .iter()
         .map(|r| r.unfold())
         .collect();
-    println!("PART 2: {}", solve(records));
+    println!("PART 2: {}", solve(&records));
 }
 
 
-fn solve(records: Vec<Record>) -> usize {
+fn solve(records: &[Record]) -> usize {
     records.iter()
-        .map(|r| r.arrangements())
+        .enumerate()
+        .map(|x| {
+            let egg = x.1.arrangements();
+            println!("{} {}", x.0, egg);
+            egg
+        })
         .sum()
 }
 
@@ -57,6 +62,49 @@ impl Record {
     }
 
     fn arrangements(&self) -> usize {
+        self.find_arrangements(&self.springs, &self.groups)
+    }
+
+    fn find_arrangements(&self, springs: &[char], groups: &[usize]) -> usize {
+        // if no further groups, must be no further known damaged
+        if groups.is_empty() {
+            return if springs.iter().any(|&c| c == '#'){ 0 } else { 1 };
+        }
+        // handle case where not enough springs left
+        let group = groups[0];
+        if springs.len() < group {
+            return 0;
+        }
+        let mut counts = 0usize;
+        let stop = springs.len() - group + 1;
+        for (i, c) in springs[..stop].iter().enumerate() {
+            if *c == '.' {
+                continue;
+            } else {
+                let part = &springs[i..i + group];
+                if (part.len() == group) & !part.iter().any(|&c| c == '.') {
+                    // last group and no known damaged after this point
+                    if (groups.len() == 1) & !springs[i + group..].iter().any(|&c| c == '#') {
+                        counts += 1;
+                    }
+                    // handle remaining groups
+                    else if springs.len() > i + group + 1 {
+                        if springs[i + group] != '#' {
+                            counts += self.find_arrangements(&springs[i + group + 1..], &groups[1..])
+                        }
+                    }
+                }
+                // can't proceed past a known damaged spring
+                if *c == '#' {
+                    break;
+                }
+            }
+        }
+        counts
+    }
+
+    // SLOW CODE I STARTED WITH
+    fn _arrangements_slow(&self) -> usize {
         // find indices of gaps
         let gaps: Vec<usize> = self.springs.iter()
             .enumerate()
@@ -85,13 +133,13 @@ impl Record {
                             else { x.1.clone() }
                         )
                         .collect();
-                    if self.is_valid(poss) { 1usize } else { 0usize }
+                    if self._is_valid(poss) { 1usize } else { 0usize }
                 }
             )
             .sum()
     }
 
-    fn is_valid(&self, poss: Vec<char>) -> bool {
+    fn _is_valid(&self, poss: Vec<char>) -> bool {
         let mut buffer: usize = 0;
         let mut groups: Vec<usize> = vec![];
         for spring in poss {
