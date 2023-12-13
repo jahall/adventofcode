@@ -68,7 +68,7 @@ impl Record {
     fn find_arrangements(&self, springs: &[char], groups: &[usize]) -> usize {
         // if no further groups, must be no further known damaged
         if groups.is_empty() {
-            return if springs.iter().any(|&c| c == '#'){ 0 } else { 1 };
+            return if self.any_known(springs, '#') { 0 } else { 1 };
         }
         // handle case where not enough springs left
         let group = groups[0];
@@ -82,9 +82,9 @@ impl Record {
                 continue;
             } else {
                 let part = &springs[i..i + group];
-                if (part.len() == group) & !part.iter().any(|&c| c == '.') {
+                if (part.len() == group) & !self.any_known(&part, '.') {
                     // last group and no known damaged after this point
-                    if (groups.len() == 1) & !springs[i + group..].iter().any(|&c| c == '#') {
+                    if (groups.len() == 1) & !self.any_known(&springs[i + group..], '#') {
                         counts += 1;
                     }
                     // handle remaining groups
@@ -101,6 +101,10 @@ impl Record {
             }
         }
         counts
+    }
+
+    fn any_known(&self, springs: &[char], type_: char) -> bool {
+        springs.iter().any(|&c| c == type_)
     }
 
     // SLOW CODE I STARTED WITH
