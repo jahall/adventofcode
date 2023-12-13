@@ -78,15 +78,19 @@ impl Record {
         let mut counts = 0usize;
         let stop = springs.len() - group + 1;
         for (i, c) in springs[..stop].iter().enumerate() {
+
+            // ignore operational springs
             if *c == '.' {
                 continue;
             } else {
                 let part = &springs[i..i + group];
                 if (part.len() == group) & !self.any_known(&part, '.') {
+
                     // last group and no known damaged after this point
                     if (groups.len() == 1) & !self.any_known(&springs[i + group..], '#') {
                         counts += 1;
                     }
+                    
                     // handle remaining groups
                     else if springs.len() > i + group + 1 {
                         if springs[i + group] != '#' {
