@@ -53,7 +53,7 @@ impl Record {
     fn unfold(&self) -> Record {
         let mut springs: Vec<char> = vec![];
         let mut groups: Vec<usize> = vec![];
-        for i in 0..5 {
+        for i in 0..3 {
             springs.extend(&self.springs);
             groups.extend(&self.groups);
             if i < 4 { springs.push('?') }
@@ -90,7 +90,7 @@ impl Record {
                     if (groups.len() == 1) & !self.any_known(&springs[i + group..], '#') {
                         counts += 1;
                     }
-                    
+
                     // handle remaining groups
                     else if springs.len() > i + group + 1 {
                         if springs[i + group] != '#' {
