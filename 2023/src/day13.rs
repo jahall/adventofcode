@@ -93,12 +93,12 @@ fn parse_content(content: &str) -> Vec<Grid> {
     let mut buffer: Vec<&str> = vec![];
     for row in content.split("\n") {
         if row == "" {
-            grids.push(Grid::new(&buffer.join("\n")));
+            grids.push(Grid::from_string(&buffer.join("\n")));
             buffer = vec![];
         } else {
             buffer.push(row);
         }
     }
-    grids.push(Grid::new(&buffer.join("\n")));
+    grids.push(Grid::from_string(&buffer.join("\n")));
     grids
 }

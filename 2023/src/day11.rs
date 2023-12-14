@@ -11,7 +11,7 @@ pub fn run(content: String) {
 
 
 fn solve(content: &str, expansion: usize) -> i64 {
-    let grid = Grid::new(content);
+    let grid = Grid::from_string(content);
     let planets = fetch_planets(&grid, expansion);
     let mut dists = 0i64;
     for i in 0..planets.len() {

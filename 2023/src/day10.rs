@@ -12,7 +12,7 @@ pub fn run(content: String) {
 
 
 fn part1(content: &str) {
-    let grid = Grid::new(content);
+    let grid = Grid::from_string(content);
     let start = find_start(&grid);
     let mut this = firsts(&grid, &start).0;
     let mut prev = start.clone();
@@ -29,7 +29,7 @@ fn part1(content: &str) {
 
 
 fn part2(content: &str) {
-    let grid = Grid::new(content);
+    let grid = Grid::from_string(content);
     let start = find_start(&grid);
     let pipe = build_pipe(&grid, &start);
     let corner = northwest_corner(&grid, &start, &pipe);

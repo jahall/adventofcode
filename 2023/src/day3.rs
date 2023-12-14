@@ -11,7 +11,7 @@ pub fn run(content: String) {
 
 
 fn part1(content: &String) {
-    let grid = Grid::new(content);
+    let grid = Grid::from_string(content);
     
     let mut part_sum = 0;
     for (row, line) in grid.cells.iter().enumerate() {
@@ -68,7 +68,7 @@ fn is_symbol(char: &char) -> bool {
 
 
 fn part2(content: &String) {
-    let grid = Grid::new(content);
+    let grid = Grid::from_string(content);
     let mut gearmap: HashMap<(usize, usize), Vec<u32>> = HashMap::new();
     
     let mut buffer: u32 = 0;
