@@ -51,6 +51,7 @@ fn cycle(grid: &Grid) -> Grid {
 
 
 fn tilt(grid: &Grid) -> Grid {
+    // roll all 'O' to the left
     let mut cells = grid.cells.clone();
     for (r, row) in grid.cells.iter().enumerate() {
         let mut buffer: Vec<char> = vec![];
