@@ -16,19 +16,7 @@ fn part1(content: &str) {
 
 fn part2(content: &str) {
     let boxes = install(content);
-    let focusing_power: usize =
-        boxes.iter()
-        .enumerate()
-        .map(
-            |x| x.1.iter()
-                .enumerate()
-                .map(|y|
-                    (x.0 + 1) * (y.0 + 1) * y.1.focal_length
-                )
-                .sum::<usize>()
-        )
-        .sum();
-    println!("PART 2: {}", focusing_power);
+    println!("PART 2: {}", calc_focusing_power(boxes));
 }
 
 
@@ -87,4 +75,19 @@ fn to_hash(step: &str) -> usize {
         value = ((value + c as usize) * 17) % 256;
     }
     value
+}
+
+
+fn calc_focusing_power(boxes: Vec<Vec<Lens>>) -> usize {
+    boxes.iter()
+        .enumerate()
+        .map(
+            |x| x.1.iter()
+                .enumerate()
+                .map(|y|
+                    (x.0 + 1) * (y.0 + 1) * y.1.focal_length
+                )
+                .sum::<usize>()
+        )
+        .sum()
 }
