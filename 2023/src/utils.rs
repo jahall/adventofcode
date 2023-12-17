@@ -10,6 +10,15 @@ impl Point {
     pub fn down(&self) -> Point { Point{ r: self.r + 1, c: self.c } }
     pub fn left(&self) -> Point { Point{ r: self.r, c: self.c - 1 } }
     pub fn right(&self) -> Point { Point{ r: self.r, c: self.c + 1 } }
+
+    pub fn direct_neighbors(&self, grid: &Grid) -> Vec<Point> {
+        let mut neighbors: Vec<Point> = vec![];
+        if self.r > 0 { neighbors.push(self.up()); }
+        if self.c > 0 { neighbors.push(self.left()); }
+        if self.r < grid.nrows - 1 { neighbors.push(self.down()); }
+        if self.c < grid.ncols - 1 { neighbors.push(self.right()); }
+        neighbors
+    }
 }
 
 
@@ -50,6 +59,10 @@ impl Grid {
 
     pub fn get(&self, p: &Point) -> &char {
         &self.cells[p.r][p.c]
+    }
+
+    pub fn getnum(&self, p: &Point) -> usize {
+        self.get(p).to_digit(10).unwrap() as usize
     }
 
     pub fn rotate(&self, dir: GridRotation) -> Grid {
