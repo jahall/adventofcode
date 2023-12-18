@@ -67,10 +67,10 @@ impl Beam {
         }
         Some(
             match self.dir {
-                '^' => self.change_loc(self.loc.up()),
-                'v' => self.change_loc(self.loc.down()),
-                '<' => self.change_loc(self.loc.left()),
-                '>' => self.change_loc(self.loc.right()),
+                '^' => self.change_loc(self.loc.up(1)),
+                'v' => self.change_loc(self.loc.down(1)),
+                '<' => self.change_loc(self.loc.left(1)),
+                '>' => self.change_loc(self.loc.right(1)),
                 _ => *self,
             }
         )

@@ -37,7 +37,7 @@ fn part2(content: &str) {
     let mut interior: HashSet<Point> = HashSet::new();
 
     let mut this_dir = '>';
-    let mut this = corner.down();
+    let mut this = corner.down(1);
     let mut prev = corner.clone();
     loop {
         // get current cell, and convert if 'S'
@@ -52,10 +52,10 @@ fn part2(content: &str) {
         // look in both possible interior directions
         for dir in [&next_dir, &this_dir] {
             let p = match *dir {
-                '^' => this.up(),
-                'v' => this.down(),
-                '<' => this.left(),
-                '>' => this.right(),
+                '^' => this.up(1),
+                'v' => this.down(1),
+                '<' => this.left(1),
+                '>' => this.right(1),
                 _ => Point::new(0, 0),
             };
             search_interior(&mut interior, &pipe, p);
@@ -87,20 +87,20 @@ fn find_start(grid: &Grid) -> Point {
 fn firsts(grid: &Grid, start: &Point) -> (Point, Point) {
     let mut firsts: Vec<Point> = vec![];
     if start.r > 0 {
-        let up = grid.get(&start.up());
-        if HashSet::from(['|', 'F', '7']).contains(up) { firsts.push(start.up()); }
+        let up = grid.get(&start.up(1));
+        if HashSet::from(['|', 'F', '7']).contains(up) { firsts.push(start.up(1)); }
     }
     if start.r < grid.nrows - 1 {
-        let down = grid.get(&start.down());
-        if HashSet::from(['|', 'L', 'J']).contains(down) { firsts.push(start.down()); }
+        let down = grid.get(&start.down(1));
+        if HashSet::from(['|', 'L', 'J']).contains(down) { firsts.push(start.down(1)); }
     }
     if start.c > 0 {
-        let left = grid.get(&start.left());
-        if HashSet::from(['-', 'F', 'L']).contains(left) { firsts.push(start.left()); }
+        let left = grid.get(&start.left(1));
+        if HashSet::from(['-', 'F', 'L']).contains(left) { firsts.push(start.left(1)); }
     }
     if start.c < grid.ncols - 1 {
-        let right = grid.get(&start.right());
-        if HashSet::from(['-', 'J', '7']).contains(right) { firsts.push(start.right()); }
+        let right = grid.get(&start.right(1));
+        if HashSet::from(['-', 'J', '7']).contains(right) { firsts.push(start.right(1)); }
     }
     (firsts[0], firsts[1])
 }
@@ -113,12 +113,12 @@ fn next(grid: &Grid, curr: &Point, prev: &Point) -> Point {
             let firsts = firsts(grid, curr);
             return if firsts.0 != *prev { firsts.0 } else { firsts.1 }
         },
-        '|' => return if curr.up() != *prev { curr.up() } else { curr.down() },
-        '-' => return if curr.left() != *prev { curr.left() } else { curr.right() },
-        'L' => return if curr.up() != *prev { curr.up() } else { curr.right() },
-        'J' => return if curr.up() != *prev { curr.up() } else { curr.left() },
-        '7' => return if curr.down() != *prev { curr.down() } else { curr.left() },
-        'F' => return if curr.down() != *prev { curr.down() } else { curr.right() },
+        '|' => return if curr.up(1) != *prev { curr.up(1) } else { curr.down(1) },
+        '-' => return if curr.left(1) != *prev { curr.left(1) } else { curr.right(1) },
+        'L' => return if curr.up(1) != *prev { curr.up(1) } else { curr.right(1) },
+        'J' => return if curr.up(1) != *prev { curr.up(1) } else { curr.left(1) },
+        '7' => return if curr.down(1) != *prev { curr.down(1) } else { curr.left(1) },
+        'F' => return if curr.down(1) != *prev { curr.down(1) } else { curr.right(1) },
         _ => Point::new(0, 0)
     }
 }
@@ -178,6 +178,6 @@ fn search_interior(interior: &mut HashSet<Point>, pipe: &HashSet<Point>, start: 
         }
         interior.insert(p.clone());
         // add neighbors to search
-        to_search.extend([p.up(), p.down(), p.left(), p.right()]);
+        to_search.extend([p.up(1), p.down(1), p.left(1), p.right(1)]);
     }
 }

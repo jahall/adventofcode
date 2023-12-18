@@ -1,4 +1,4 @@
-#[derive(Debug, Eq, Hash, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, Hash, PartialEq, Copy, Clone, PartialOrd, Ord)]
 pub struct Point {
     pub r: usize,
     pub c: usize,
@@ -6,17 +6,17 @@ pub struct Point {
 
 impl Point {
     pub fn new(r: usize, c: usize) -> Point { Point{ r, c } }
-    pub fn up(&self) -> Point { Point{ r: self.r - 1, c: self.c } }
-    pub fn down(&self) -> Point { Point{ r: self.r + 1, c: self.c } }
-    pub fn left(&self) -> Point { Point{ r: self.r, c: self.c - 1 } }
-    pub fn right(&self) -> Point { Point{ r: self.r, c: self.c + 1 } }
+    pub fn up(&self, inc: usize) -> Point { Point{ r: self.r - inc, c: self.c } }
+    pub fn down(&self, inc: usize) -> Point { Point{ r: self.r + inc, c: self.c } }
+    pub fn left(&self, inc: usize) -> Point { Point{ r: self.r, c: self.c - inc } }
+    pub fn right(&self, inc: usize) -> Point { Point{ r: self.r, c: self.c + inc } }
 
     pub fn direct_neighbors(&self, grid: &Grid) -> Vec<Point> {
         let mut neighbors: Vec<Point> = vec![];
-        if self.r > 0 { neighbors.push(self.up()); }
-        if self.c > 0 { neighbors.push(self.left()); }
-        if self.r < grid.nrows - 1 { neighbors.push(self.down()); }
-        if self.c < grid.ncols - 1 { neighbors.push(self.right()); }
+        if self.r > 0 { neighbors.push(self.up(1)); }
+        if self.c > 0 { neighbors.push(self.left(1)); }
+        if self.r < grid.nrows - 1 { neighbors.push(self.down(1)); }
+        if self.c < grid.ncols - 1 { neighbors.push(self.right(1)); }
         neighbors
     }
 }

@@ -158,12 +158,12 @@ impl State {
         };
         // construct the neighbors
         if allow_vertical {
-            if self.loc.r > 0 { neighbors.push(self.loc.up()); }
-            if self.loc.r < grid.nrows - 1 { neighbors.push(self.loc.down()); }
+            if self.loc.r > 0 { neighbors.push(self.loc.up(1)); }
+            if self.loc.r < grid.nrows - 1 { neighbors.push(self.loc.down(1)); }
         };
         if allow_horizontal {
-            if self.loc.c > 0 { neighbors.push(self.loc.left()); }
-            if self.loc.c < grid.ncols - 1 { neighbors.push(self.loc.right()); }
+            if self.loc.c > 0 { neighbors.push(self.loc.left(1)); }
+            if self.loc.c < grid.ncols - 1 { neighbors.push(self.loc.right(1)); }
         };
         // don't go back on yourself!
         if !self.prev.is_empty() {
