@@ -13,18 +13,18 @@ pub fn run(content: String) {
 
 fn part1(content: &str) {
     let grid = Grid::from_string(content);
-    println!("PART 1: {}", find_path(&grid, false));
+    println!("PART 1: {}", find_path(&grid, false, false));
 }
 
 
 fn part2(content: &str) {
     let grid = Grid::from_string(content);
-    println!("PART 2: {}", find_path(&grid, true));
+    println!("PART 2: {}", find_path(&grid, true, false));
 }
 
 
 /// Use Djikastra to find shortest path
-fn find_path(grid: &Grid, is_ultra: bool) -> usize {
+fn find_path(grid: &Grid, is_ultra: bool, show_path: bool) -> usize {
 
     // initialize the heap
     let mut heap = BinaryHeap::new();
@@ -47,7 +47,7 @@ fn find_path(grid: &Grid, is_ultra: bool) -> usize {
     while let Some(state) = heap.pop() {
         // we've arrived at the target!
         if (state.loc == target) && state.allowed_to_stop() {
-            show(grid, &state);
+            if show_path{ show(grid, &state); }
             return state.cost;
         }
 
