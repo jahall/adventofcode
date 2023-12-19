@@ -29,10 +29,13 @@ fn part1(content: &str) {
 
 fn part2(content: &str, verbose: bool) {
     let (workflows, _) = load_workflows_and_parts(content);
-    let mut queue: VecDeque<(_, &str)> = VecDeque::new();
+
+    // Instantiate the queue
     let start = PartRange::new((1, 4000), (1, 4000), (1, 4000), (1, 4000));
-    let mut n_combinations = 0_usize;
+    let mut queue: VecDeque<(_, &str)> = VecDeque::new();
     queue.push_back((start, "in"));
+
+    let mut n_combinations = 0_usize;
     while let Some((range, name)) = queue.pop_front() {
         if verbose { println!("{}\t{}", name, range.to_string()); }
         match name {
@@ -57,6 +60,7 @@ struct Workflow {
 }
 
 impl Workflow {
+    /// Instantiate from input line
     fn from_string(line: &str) -> Workflow {
         let name = line.split("{").next().unwrap();
         Workflow {
@@ -68,7 +72,7 @@ impl Workflow {
         }
     }
 
-    /// Apply the workflow to this part
+    /// Apply the workflow to a single part
     fn apply(&self, part: &Part) -> &str {
         for rule in self.rules.iter() {
             if rule.is_valid(part) {
@@ -108,6 +112,7 @@ struct Rule {
 }
 
 impl Rule {
+    /// Instantiate from input string
     fn from_string(part: &str) -> Rule {
         let bits = part.split(":").collect_vec();
         if bits.len() == 1 {
@@ -127,7 +132,7 @@ impl Rule {
         }
     }
 
-    // Does this part pass the rule?
+    /// Does a given part pass the rule?
     fn is_valid(&self, part: &Part) -> bool {
         match self.condition {
             '<' => part.get(self.category) < self.value,
@@ -136,7 +141,7 @@ impl Rule {
         }
     }
 
-    /// Return ranges which pass and fail the rule
+    /// Return sub-range of parts which pass and the sub-range which fail
     fn apply_to_range(&self, range: &PartRange) -> (Option<PartRange>, Option<PartRange>) {
         let (low, high) = range.get(self.category);
         if ((self.condition != '<') && (self.condition != '>')) ||
@@ -169,10 +174,12 @@ impl Part {
         Part{ x, m, a, s }
     }
 
+    /// Value is the sum of ratings
     fn value(&self) -> usize {
         self.x + self.m + self.a + self.s
     }
 
+    /// Get attribute by name
     fn get(&self, attr: char) -> usize {
         match attr {'x' => self.x, 'm' => self.m, 'a' => self.a, _ => self.s}
     }
@@ -197,6 +204,7 @@ impl PartRange {
         PartRange{ x, m, a, s }
     }
 
+    /// Number of all possible distinct combinations of ratings
     fn n_combinations(&self) -> usize {
         let nx = self.x.1 - self.x.0 + 1;
         let nm = self.m.1 - self.m.0 + 1;
@@ -205,6 +213,7 @@ impl PartRange {
         nx * nm * na * ns
     }
 
+    /// Get attribute by name
     fn get(&self, attr: char) -> (usize, usize) {
         match attr {'x' => self.x, 'm' => self.m, 'a' => self.a, _ => self.s}
     }
