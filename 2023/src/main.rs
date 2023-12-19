@@ -21,6 +21,12 @@ mod day16;
 mod day17;
 mod day18;
 mod day19;
+mod day20;
+mod day21;
+mod day22;
+mod day23;
+mod day24;
+mod day25;
 pub mod utils;
 
 
@@ -66,6 +72,18 @@ fn main() {
         day18::run(data.content);
     } else if (data.suffix == "19") | (data.suffix.starts_with("19_")) {
         day19::run(data.content);
+    } else if (data.suffix == "20") | (data.suffix.starts_with("20_")) {
+        day20::run(data.content);
+    } else if (data.suffix == "21") | (data.suffix.starts_with("21_")) {
+        day21::run(data.content);
+    } else if (data.suffix == "22") | (data.suffix.starts_with("22_")) {
+        day22::run(data.content);
+    } else if (data.suffix == "23") | (data.suffix.starts_with("23_")) {
+        day23::run(data.content);
+    } else if (data.suffix == "24") | (data.suffix.starts_with("24_")) {
+        day24::run(data.content);
+    } else if (data.suffix == "25") | (data.suffix.starts_with("25_")) {
+        day25::run(data.content);
     }
 }
 
