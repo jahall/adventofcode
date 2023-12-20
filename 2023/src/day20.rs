@@ -1,4 +1,4 @@
-// 2 hours for part 1
+// 2 hours for part 1 - maybe another hour for part 2
 
 use std::{collections::{HashMap, VecDeque}, fmt::Debug};
 
@@ -35,20 +35,29 @@ fn part1(content: &str, verbose: bool) {
 }
 
 
+/// The node "rx" gets a low signal when all inputs to conjunction "vr" are low
+/// The four inputs to "vr" are "bm", "cl", "tn", "dr" - so assume they operate
+/// on some fixed (prime-number) cycle
 fn part2(content: &str) {
     let mut modules = parse_content(content);
-    let mut n_presses = 0;
+    let mut cycle_lengths = HashMap::new();
+    for node in ["bm", "cl", "tn", "dr"] {
+        cycle_lengths.insert(String::from(node), usize::MAX);
+    }
+    let mut n_presses = 0_usize;
     loop {
         n_presses += 1;
-        if n_presses % 10_000 == 0 {println!("{}", n_presses)}
         let mut queue = VecDeque::new();
         queue.push_back((String::from("button"), String::from("broadcaster"), Pulse::Low));
         while let Some((source, dest, pulse)) = queue.pop_front() {
-            if (dest == "rx") & (pulse == Pulse::Low) {
-                println!("PART 2: {}", n_presses);
-                return;
-            }
             if let Some(module) = modules.get_mut(&dest) {
+                if dest == "vr" {
+                    module.update_cycle_lengths(n_presses, &mut cycle_lengths);
+                    if cycle_lengths.values().all(|v| *v < usize::MAX) {
+                        println!("PART 2: {}", cycle_lengths.values().product::<usize>());
+                        return;
+                    }
+                }
                 for (next, pulse) in module.pulse(&source, pulse) {
                     queue.push_back((dest.clone(), next, pulse));
                 }
@@ -86,6 +95,7 @@ trait Module {
     fn name(&self) -> String;
     fn pulse(&mut self, from: &String, pulse: Pulse) -> Vec<(String, Pulse)>;
     fn to_string(&self) -> String;
+    fn update_cycle_lengths(&self, _: usize, _: &mut HashMap<String, usize>) {}
 
     fn send(&self, dests: &Vec<String>, pulse: Pulse) -> Vec<(String, Pulse)> {
         dests.iter().map(|d| (d.clone(), pulse)).collect()
@@ -205,6 +215,18 @@ impl Module for Conjunction {
             .map(|x| format!("{}:{}", x.0, x.1.to_string()))
             .join(",");
         format!("{}->[{}]({})", self.name(), self.dests.join(","), mem)
+    }
+
+    /// Hacky solution for part 2
+    fn update_cycle_lengths(&self, n_presses: usize, cycle_lengths: &mut HashMap<String, usize>) {
+        for node in self.memory
+            .iter()
+            .filter(|kv| *kv.1 == Pulse::High)
+            .map(|kv| kv.0) {
+            if n_presses < cycle_lengths[node] {
+                cycle_lengths.insert(node.clone(), n_presses);
+            }
+        }
     }
 }
 
