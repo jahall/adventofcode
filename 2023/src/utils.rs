@@ -40,16 +40,33 @@ pub enum GridRotation {
 }
 
 impl Grid {
+    /// New grid from grid of chars
     pub fn new(cells: Vec<Vec<char>>) -> Grid {
         let nrows = cells.len();
         let ncols = cells[0].len();
         Grid { cells, nrows, ncols }
     }
 
+    /// New grid from input string
     pub fn from_string(content: &str) -> Grid {
         let cells: Vec<Vec<char>> = content.split("\n")
             .map(|line| line.trim().chars().collect())
             .collect();
+        Grid::new(cells)
+    }
+
+    /// New grid from concatenating other grids - used in day 21 for testing
+    pub fn replicate(&self, shape: (usize, usize)) -> Grid {
+        let mut cells = vec![];
+        for _ in 0..shape.0 {
+            let mut row_cells: Vec<Vec<char>> = vec![vec![]; self.nrows];
+            for _ in 0..shape.1 {
+                for (i, row) in self.cells.iter().enumerate() {
+                    row_cells[i].extend(row.iter());
+                }
+            }
+            cells.extend(row_cells);
+        }
         Grid::new(cells)
     }
 
