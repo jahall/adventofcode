@@ -19,6 +19,10 @@ impl Point {
         if self.c < grid.ncols - 1 { neighbors.push(self.right(1)); }
         neighbors
     }
+
+    pub fn to_string(&self) -> String {
+        format!("({}, {})", self.r, self.c)
+    }
 }
 
 
